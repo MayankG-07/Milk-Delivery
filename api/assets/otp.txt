@@ -1,0 +1,9 @@
+Dear Customer
+
+You requested a one time password at Patel Kirana Store
+
+Your one time password (OTP) at Patel Kirana Store is - {} - valid for 10 minutes only.
+
+Please enter this OTP on the app to proceed.
+
+Thanks
