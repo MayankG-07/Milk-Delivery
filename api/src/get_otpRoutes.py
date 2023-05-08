@@ -22,13 +22,13 @@ def get_otp(getOtpParams: GetOtpParams):
 
     try:
         email = cursor.fetchall()[0][0]
-    except:
+    except IndexError:
         disconnect()
         return {"error": "INVALID_CREDS"}
 
-    if not email:
-        disconnect()
-        return {"error": "INVALID_CREDS"}
+    # if not email:
+    #     disconnect()
+    #     return {"error": "INVALID_CREDS"}
 
     new_otp = OTP(email)
     message = new_otp.send()
