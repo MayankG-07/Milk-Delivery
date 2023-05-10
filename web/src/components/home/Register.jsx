@@ -17,8 +17,10 @@ import { useState } from "react";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import axios from "axios";
 import { url } from "../../assets/res";
+import { PropTypes } from "prop-types";
+import { useNavigate } from "react-router-dom";
 
-export const Register = () => {
+export const Register = ({ boxStyles }) => {
   const [details, setDetails] = useState({
     wing: "",
     houseNo: "",
@@ -26,7 +28,10 @@ export const Register = () => {
     password: { value: "", show: false },
     confirmPassword: { value: "", show: false },
   });
+
   const [registerLoading, setRegisterLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleRegister = () => {
     if (!details.wing || !details.houseNo || !details.email) {
@@ -72,18 +77,19 @@ export const Register = () => {
   };
 
   return (
-    <Box>
+    <Box sx={boxStyles}>
       <Typography sx={{ paddingY: 2 }} variant="h5">
         Register
       </Typography>
-      <Divider sx={{ marginBottom: 1 }} />
-      <FormControl>
+      <Divider sx={{ marginBottom: 1, width: "87%" }} />
+      <FormControl sx={{ width: "87%" }}>
         <FormLabel>Wing:</FormLabel>
         <RadioGroup
           value={useState.wing}
           onChange={(_event, newValue) =>
             setDetails({ ...details, wing: newValue })
           }
+          sx={{ alignItems: "center", justifyContent: "center" }}
           row
         >
           <FormControlLabel value="a" control={<Radio />} label="A" />
@@ -91,7 +97,7 @@ export const Register = () => {
         </RadioGroup>
       </FormControl>
       <TextField
-        sx={{ marginY: 1, width: "87%" }}
+        sx={{ marginY: 1, width: "42.5%", marginX: 1 }}
         value={details.houseNo}
         label="House No"
         onChange={(event) => {
@@ -103,7 +109,7 @@ export const Register = () => {
         }}
       />
       <TextField
-        sx={{ marginY: 1, width: "87%" }}
+        sx={{ marginY: 1, width: "42.5%", marginX: 1 }}
         value={details.email}
         label="Email"
         type="email"
@@ -112,7 +118,7 @@ export const Register = () => {
         }
       />
       <TextField
-        sx={{ marginY: 1, width: "87%" }}
+        sx={{ marginY: 1, width: "42.5%", marginX: 1 }}
         value={details.password.value}
         label="Password"
         type={details.password.show ? "text" : "password"}
@@ -144,7 +150,7 @@ export const Register = () => {
         }}
       />
       <TextField
-        sx={{ marginY: 1, width: "87%" }}
+        sx={{ marginY: 1, width: "42.5%", marginX: 1 }}
         value={details.confirmPassword.value}
         label="Confirm Password"
         type={details.confirmPassword.show ? "text" : "password"}
@@ -206,6 +212,17 @@ export const Register = () => {
           />
         )}
       </Box>
+
+      <Button
+        sx={{ marginY: 1, width: "87%" }}
+        onClick={() => navigate("/login")}
+      >
+        Existing User? Login Here
+      </Button>
     </Box>
   );
+};
+
+Register.propTypes = {
+  boxStyles: PropTypes.object,
 };

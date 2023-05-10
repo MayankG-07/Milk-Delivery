@@ -19,8 +19,10 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Timer } from "../misc/Timer";
+import { useNavigate } from "react-router-dom";
+import { PropTypes } from "prop-types";
 
-export const Login = () => {
+export const Login = ({ boxStyles }) => {
   const [details, setDetails] = useState({
     wing: null,
     houseno: null,
@@ -35,7 +37,10 @@ export const Login = () => {
     value: null,
     sentValue: null,
   });
+
   const [loginType, setLoginType] = useState({ loading: false, withOtp: true });
+
+  const navigate = useNavigate();
 
   const handleSendOtp = () => {
     if (!details.houseno) {
@@ -158,7 +163,7 @@ export const Login = () => {
   };
 
   return (
-    <Box>
+    <Box sx={boxStyles}>
       <Typography sx={{ paddingY: 2 }} variant="h5">
         Login
       </Typography>
@@ -327,6 +332,17 @@ export const Login = () => {
       >
         {loginType.withOtp ? <>Login with Password</> : <>Login with OTP</>}
       </Button>
+
+      <Button
+        sx={{ marginY: 1, width: "87%" }}
+        onClick={() => navigate("/register")}
+      >
+        New User? Register Here
+      </Button>
     </Box>
   );
+};
+
+Login.propTypes = {
+  boxStyles: PropTypes.object,
 };
