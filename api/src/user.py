@@ -132,6 +132,22 @@ class User:
         disconnect()
         return {"success": "LOGIN_SUCCESS"}
 
+    def verify_email(self):
+        connect()
+        from db import con, cursor
+
+        try:
+            cursor.execute(
+                f"UPDATE users SET verified=1 WHERE wing='{self.wing}' AND houseno={self.houseno}"
+            )
+        except Exception as e:
+            disconnect()
+            return {"error": e}
+
+        con.commit()
+        disconnect()
+        return {"success": "EMAIL_VERIFY_SUCCESS"}
+
     def get_details(self):
         connect()
         from db import con, cursor

@@ -18,77 +18,91 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { Timer } from "../misc/Timer";
 
 export const Login = () => {
-  const [houseNo, setHouseNo] = useState("");
-  const [password, setPassword] = useState("");
-  const [wing, setWing] = useState("");
+  const [details, setDetails] = useState({
+    wing: null,
+    houseno: null,
+    password: { value: null, show: false },
+  });
 
-  const [showPassword, setShowPassword] = useState(false);
-
-  const [loginWithOtp, setLoginWithOtp] = useState(true);
-  const [otpSent, setOtpSent] = useState({ isOtpSent: false, value: null });
-  const [otp, setOtp] = useState("");
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [loginLoading, setLoginLoading] = useState(false);
+  const [otp, setOtp] = useState({
+    sent: false,
+    loading: false,
+    sendAgain: false,
+    time: null,
+    value: null,
+    sentValue: null,
+  });
+  const [loginType, setLoginType] = useState({ loading: false, withOtp: true });
 
   const handleSendOtp = () => {
-    if (!houseNo) {
+    if (!details.houseno) {
       alert("Enter valid details");
       return;
     }
 
-    setOtpLoading(true);
+    setOtp({ ...otp, loading: true });
+
     axios
       .patch(`${url}/api/get_otp`, {
-        wing: wing,
-        houseno: houseNo,
+        wing: details.wing,
+        houseno: details.houseno,
       })
       .then((res) => {
+        setOtp({ ...otp, loading: false });
         if (res.data.success) {
-          setOtpLoading(false);
-          setOtpSent({ isOtpSent: true, value: res.data.data.otp });
+          const time = new Date();
+          time.setSeconds(time.getSeconds() + 300);
+
+          setOtp({
+            sent: true,
+            sentValue: res.data.data.otp,
+            sendAgain: false,
+            time,
+          });
+          return;
         } else if (res.data.error === "INVALID_CREDS") {
-          setOtpLoading(false);
           alert("Invalid details");
+          return;
         } else {
-          setOtpLoading(false);
           alert("An error occurred");
           console.log(res.data.error);
+          return;
         }
       })
       .catch((error) => {
-        setOtpLoading(false);
+        setOtp({ ...otp, loading: false });
         alert("An error occurred");
         console.log(error);
       });
   };
 
   const handleLoginOtp = () => {
-    setLoginLoading(true);
+    setLoginType({ ...loginType, loading: true });
     axios
       .patch(`${url}/api/login/otp`, {
-        wing: wing,
-        houseno: houseNo,
-        otp: otp,
+        wing: details.wing,
+        houseno: details.houseno,
+        otp: otp.value,
       })
       .then((res) => {
+        setLoginType({ ...loginType, loading: false });
         if (res.data.success) {
           login();
           return;
         } else if (res.data.error === "INVALID_OTP") {
-          setLoginLoading(false);
           alert("Invalid OTP");
           return;
         } else {
-          setLoginLoading(false);
           alert("An error occurred");
           console.log(res.data.error);
           return;
         }
       })
       .catch((error) => {
-        setLoginLoading(false);
+        setLoginType({ ...loginType, loading: false });
         alert("An error occurred");
         console.log(error);
         return;
@@ -96,49 +110,43 @@ export const Login = () => {
   };
 
   const handleLoginPassword = () => {
-    if (showPassword) {
-      setShowPassword(false);
+    if (details.password.show) {
+      setDetails({
+        ...details,
+        password: { ...details.password, show: false },
+      });
     }
 
-    if (!houseNo || !password) {
+    if (!details.houseno || !details.password.value) {
       alert("Enter valid house no and password");
       return;
     }
 
-    // let _wing = wing;
-    // let _houseNo = houseNo;
-    // let _password = password;
-
-    // setWing("");
-    // setHouseNo("");
-    // setPassword("");
-
-    setLoginLoading(true);
+    setLoginType({ ...loginType, loading: true });
 
     axios
       .patch(`${url}/api/login/password`, {
-        wing: wing,
-        houseno: houseNo,
-        password: password,
+        wing: details.wing,
+        houseno: details.houseno,
+        password: details.password.value,
       })
       .then((res) => {
+        setLoginType({ ...loginType, loading: false });
         console.log(res);
         if (res.data.success) {
           login();
           return;
         } else if (res.data.error === "INVALID_CREDS") {
-          setLoginLoading(false);
           alert("Invalid details");
           return;
         } else {
-          setLoginLoading(false);
           console.log(res.data);
           alert("Error occurred");
           return;
         }
       })
       .catch((error) => {
-        setLoginLoading(false);
+        setLoginType({ ...loginType, loading: false });
         alert("An error occurred");
         console.log(error);
         return;
@@ -146,9 +154,7 @@ export const Login = () => {
   };
 
   const login = () => {
-    setLoginLoading(false);
-    // alert("Login successful");
-    // TODO login code goes here
+    // TODO login redirect code goes here
   };
 
   return (
@@ -157,11 +163,13 @@ export const Login = () => {
         Login
       </Typography>
       <Divider sx={{ marginBottom: 1 }} />
-      <FormControl disabled={otpLoading}>
+      <FormControl disabled={otp.loading}>
         <FormLabel>Wing:</FormLabel>
         <RadioGroup
-          value={wing}
-          onChange={(_event, newValue) => setWing(newValue)}
+          value={details.wing ? details.wing : ""}
+          onChange={(_event, newValue) =>
+            setDetails({ ...details, wing: newValue })
+          }
           row
         >
           <FormControlLabel value="a" control={<Radio />} label="A" />
@@ -169,71 +177,105 @@ export const Login = () => {
         </RadioGroup>
       </FormControl>
       <TextField
-        sx={{ marginLeft: 2, marginRight: 2, marginY: 1, width: "87%" }}
-        value={houseNo}
+        sx={{ marginY: 1, width: "87%" }}
+        value={details.houseno ? details.houseno : ""}
         label="House No"
         onChange={(event) => {
           if (!isNaN(parseInt(event.target.value))) {
-            setHouseNo(parseInt(event.target.value));
+            setDetails({ ...details, houseno: parseInt(event.target.value) });
           } else if (event.target.value === "") {
-            setHouseNo("");
+            setDetails({ ...details, houseno: null });
           }
         }}
-        disabled={otpLoading}
+        disabled={otp.loading}
         InputProps={
-          loginWithOtp
+          loginType.withOtp
             ? {
                 endAdornment: (
                   <InputAdornment position="end">
-                    <Chip
-                      color="primary"
-                      label={
-                        otpSent.isOtpSent
-                          ? "OTP Sent"
-                          : otpLoading
-                          ? "Sending..."
-                          : "Send OTP"
-                      }
-                      clickable
-                      disabled={otpSent.isOtpSent || otpLoading}
-                      onClick={handleSendOtp}
-                    />
+                    {!otp.sendAgain && otp.sent && !otp.loading ? (
+                      <Timer expiryTimestamp={otp.time}>
+                        {(minutes, seconds, isRunning) => {
+                          if (isRunning) {
+                            return (
+                              <Chip
+                                color="primary"
+                                label={`${minutes}:${seconds}`}
+                                disabled={true}
+                              />
+                            );
+                          } else {
+                            setOtp({ ...otp, sendAgain: true, time: null });
+                            return <></>;
+                          }
+                        }}
+                      </Timer>
+                    ) : (
+                      <Chip
+                        color="primary"
+                        label={
+                          otp.loading
+                            ? "Sending..."
+                            : otp.sent
+                            ? "Resend OTP"
+                            : "Send OTP"
+                        }
+                        disabled={otp.loading}
+                        clickable={!otp.loading}
+                        onClick={handleSendOtp}
+                      />
+                    )}
                   </InputAdornment>
                 ),
               }
             : {}
         }
       />
-      {loginWithOtp ? (
+      {loginType.withOtp ? (
         <>
           <TextField
-            sx={{ marginLeft: 2, marginRight: 2, marginY: 1, width: "87%" }}
-            value={otp}
+            sx={{ marginY: 1, width: "87%" }}
+            value={otp.value ? otp.value : ""}
             label="OTP"
             onChange={(event) => {
               if (!isNaN(parseInt(event.target.value))) {
-                setOtp(parseInt(event.target.value));
+                setOtp({ ...otp, value: parseInt(event.target.value) });
+              } else if (event.target.value === "") {
+                setOtp({ ...otp, value: null });
               }
             }}
-            disabled={!otpSent.isOtpSent}
+            disabled={!otp.sent}
           />
         </>
       ) : (
         <>
           <TextField
-            sx={{ marginLeft: 2, marginRight: 2, marginY: 1, width: "87%" }}
-            value={password}
+            sx={{ marginY: 1, width: "87%" }}
+            value={details.password.value ? details.password.value : ""}
             label="Password"
-            type={showPassword ? "text" : "password"}
-            onChange={(event) => setPassword(event.target.value)}
+            type={details.password.show ? "text" : "password"}
+            onChange={(event) =>
+              setDetails({
+                ...details,
+                password: { ...details.password, value: event.target.value },
+              })
+            }
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton
                     edge="end"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() =>
+                      setDetails({
+                        ...details,
+                        password: {
+                          ...details.password,
+                          show: !details.password.show,
+                        },
+                      })
+                    }
                   >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                    {details.password.show ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
               ),
@@ -245,19 +287,22 @@ export const Login = () => {
       <Box sx={{ position: "relative" }}>
         <Button
           variant="contained"
-          onClick={loginWithOtp ? handleLoginOtp : handleLoginPassword}
+          onClick={loginType.withOtp ? handleLoginOtp : handleLoginPassword}
           sx={{ marginY: 1, width: "87%" }}
           disabled={
-            loginLoading
+            loginType.loading
               ? true
-              : loginWithOtp
-              ? !houseNo || !otp || otp < 1000 || otp > 9999
-              : !houseNo || !password
+              : loginType.withOtp
+              ? !details.houseno ||
+                !otp.value ||
+                otp.value < 1000 ||
+                otp.value > 9999
+              : !details.houseno || !details.password.value
           }
         >
           Login
         </Button>
-        {loginLoading && (
+        {loginType.loading && (
           <CircularProgress
             size={24}
             sx={{
@@ -274,13 +319,13 @@ export const Login = () => {
       <Button
         variant="outlined"
         onClick={
-          loginWithOtp
-            ? () => setLoginWithOtp(false)
-            : () => setLoginWithOtp(true)
+          loginType.withOtp
+            ? () => setLoginType({ ...loginType, withOtp: false })
+            : () => setLoginType({ ...loginType, withOtp: true })
         }
         sx={{ marginY: 0.15, width: "87%" }}
       >
-        {loginWithOtp ? <>Login with Password</> : <>Login with OTP</>}
+        {loginType.withOtp ? <>Login with Password</> : <>Login with OTP</>}
       </Button>
     </Box>
   );
