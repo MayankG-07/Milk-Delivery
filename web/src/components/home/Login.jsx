@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import axios from "axios";
 import { url } from "./../../assets/res";
 import {
@@ -21,6 +21,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Timer } from "../misc/Timer";
 import { useNavigate } from "react-router-dom";
 import { PropTypes } from "prop-types";
+import { UserContext } from "../../context/userContext";
 
 export const Login = ({ boxStyles }) => {
   const [details, setDetails] = useState({
@@ -41,6 +42,8 @@ export const Login = ({ boxStyles }) => {
   const [loginType, setLoginType] = useState({ loading: false, withOtp: true });
 
   const navigate = useNavigate();
+  const userContext = useContext(UserContext);
+  const { handleDetailsChange } = userContext;
 
   const handleSendOtp = () => {
     if (!details.houseno) {
@@ -160,6 +163,10 @@ export const Login = ({ boxStyles }) => {
 
   const login = () => {
     // TODO login redirect code goes here
+    // console.log(details.wing, details.houseno);
+    handleDetailsChange({ wing: details.wing, houseno: details.houseno });
+    navigate("/home");
+    location.reload();
   };
 
   return (
@@ -182,7 +189,7 @@ export const Login = ({ boxStyles }) => {
         </RadioGroup>
       </FormControl>
       <TextField
-        sx={{ marginY: 1, width: "87%" }}
+        sx={{ marginY: 1, width: "87%", color: "primary" }}
         value={details.houseno ? details.houseno : ""}
         label="House No"
         onChange={(event) => {
@@ -204,7 +211,7 @@ export const Login = ({ boxStyles }) => {
                           if (isRunning) {
                             return (
                               <Chip
-                                color="primary"
+                                sx={{ color: "primary" }}
                                 label={`${minutes}:${seconds}`}
                                 disabled={true}
                               />
@@ -217,7 +224,7 @@ export const Login = ({ boxStyles }) => {
                       </Timer>
                     ) : (
                       <Chip
-                        color="primary"
+                        sx={{ color: "primary" }}
                         label={
                           otp.loading
                             ? "Sending..."
@@ -239,7 +246,7 @@ export const Login = ({ boxStyles }) => {
       {loginType.withOtp ? (
         <>
           <TextField
-            sx={{ marginY: 1, width: "87%" }}
+            sx={{ marginY: 1, width: "87%", color: "primary" }}
             value={otp.value ? otp.value : ""}
             label="OTP"
             onChange={(event) => {
@@ -255,7 +262,7 @@ export const Login = ({ boxStyles }) => {
       ) : (
         <>
           <TextField
-            sx={{ marginY: 1, width: "87%" }}
+            sx={{ marginY: 1, width: "87%", color: "primary" }}
             value={details.password.value ? details.password.value : ""}
             label="Password"
             type={details.password.show ? "text" : "password"}
@@ -293,7 +300,7 @@ export const Login = ({ boxStyles }) => {
         <Button
           variant="contained"
           onClick={loginType.withOtp ? handleLoginOtp : handleLoginPassword}
-          sx={{ marginY: 1, width: "87%" }}
+          sx={{ marginY: 1, width: "87%", color: "primary" }}
           disabled={
             loginType.loading
               ? true
@@ -328,13 +335,13 @@ export const Login = ({ boxStyles }) => {
             ? () => setLoginType({ ...loginType, withOtp: false })
             : () => setLoginType({ ...loginType, withOtp: true })
         }
-        sx={{ marginY: 0.15, width: "87%" }}
+        sx={{ marginY: 0.15, width: "87%", color: "primary" }}
       >
         {loginType.withOtp ? <>Login with Password</> : <>Login with OTP</>}
       </Button>
 
       <Button
-        sx={{ marginY: 1, width: "87%" }}
+        sx={{ marginY: 1, width: "87%", color: "primary" }}
         onClick={() => navigate("/register")}
       >
         New User? Register Here

@@ -3,7 +3,7 @@ import { PropTypes } from "prop-types";
 
 export const UserContext = createContext({
   details: null,
-  onDetailsChange: (newDetails) => {},
+  handleDetailsChange: (newDetails) => {},
 });
 
 export const UserContextProvider = ({ children }) => {
@@ -12,13 +12,15 @@ export const UserContextProvider = ({ children }) => {
   );
 
   const handleDetailsChange = (newDetails) => {
-    setDetails({ ...details, ...newDetails });
-    localStorage.setItem("user", JSON.stringify(details));
+    console.log(newDetails);
+    setDetails(newDetails);
+    // console.log(details);
+    localStorage.setItem("user", JSON.stringify(newDetails));
   };
 
   const contextValue = {
     userDetails: details,
-    onDetailsChange: handleDetailsChange,
+    handleDetailsChange,
   };
 
   return (

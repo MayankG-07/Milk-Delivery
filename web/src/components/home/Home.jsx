@@ -3,9 +3,28 @@ import { Login } from "./Login";
 import { Box, Button, Card } from "@mui/material";
 import { useState } from "react";
 import { VerifyEmail } from "./VerifyEmail";
+import { useContext } from "react";
+import { UserContext } from "../../context/userContext";
+import { Dashboard } from "../dashboard/Dashboard";
 
 const Home = () => {
-  return <div>Home</div>;
+  const userContext = useContext(UserContext);
+  const { userDetails } = userContext;
+
+  // console.log(userDetails, userDetails.length);
+  return (
+    <>
+      {Object.keys(userDetails).length === 0 ? (
+        <Box>
+          <Login />
+        </Box>
+      ) : (
+        <Box>
+          <Dashboard />
+        </Box>
+      )}
+    </>
+  );
 };
 
 export default Home;

@@ -11,12 +11,20 @@ class OTP:
         connect()
         from db import con, cursor
 
-        cursor.execute(f"SELECT otp FROM users WHERE email='{self.email}'")
-        prev_otp = cursor.fetchall()[0][0]
-        if prev_otp:
-            prev_otp = int(prev_otp)
-            while self.value == prev_otp:
+        while True:
+            try:
+                cursor.execute(f"SELECT houseno FROM users WHERE otp={self.value}")
+                temp_otp = cursor.fetchall()[0][0]
                 self.value = randrange(1111, 9999)
+            except:
+                break
+
+        # cursor.execute(f"SELECT otp FROM users WHERE email='{self.email}'")
+        # prev_otp = cursor.fetchall()[0][0]
+        # if prev_otp:
+        #     prev_otp = int(prev_otp)
+        #     while self.value == prev_otp:
+        #         self.value = randrange(1111, 9999)
 
         cursor.execute(f"UPDATE users SET otp={self.value} WHERE email='{self.email}'")
         cursor.execute(f"UPDATE users SET otpGenTime=NOW() WHERE email='{self.email}'")

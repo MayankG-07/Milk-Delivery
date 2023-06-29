@@ -36,7 +36,8 @@ class User:
         try:
             cursor.execute(f"SELECT max(id) FROM users")
             prev_id = cursor.fetchall()[0][0]
-            if not prev_id:
+            print(prev_id, type(prev_id))
+            if (not prev_id) and (not prev_id == 0):
                 current_id = 0
             else:
                 current_id = int(prev_id) + 1
@@ -99,7 +100,7 @@ class User:
             f"SELECT otp, otpGenTime FROM users WHERE houseno={self.houseno}"
         )
         result = cursor.fetchall()[0]
-
+        print(result)
         if not result:
             disconnect()
             return {"error": "INVALID_CREDS"}
@@ -107,16 +108,17 @@ class User:
         req_otp, otpGenTime = result
 
         cursor.execute(
-            f"SELECT houseno FROM users WHERE DATE_ADD('{otpGenTime}', INTERVAL 10 MINUTE) >= NOW()"
+            f"SELECT houseno FROM users WHERE DATE_ADD(otpGenTime, INTERVAL 10 MINUTE) >= NOW() AND otp={req_otp}"
         )
 
         try:
             result = cursor.fetchall()[0][0]
-        except:
+        except Exception as e:
+            print(e)
             disconnect()
             return {"error": "INVALID_OTP"}
 
-        if (not result) or (not result == self.houseno):
+        if (not result) or (not (result == self.houseno)):
             disconnect()
             return {"error": "INVALID_CREDS"}
 
