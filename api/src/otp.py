@@ -9,7 +9,9 @@ class OTP:
         self.value = randrange(1111, 9999)
 
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         while True:
             try:

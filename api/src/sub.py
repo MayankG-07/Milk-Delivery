@@ -9,7 +9,9 @@ class Subscription:
 
     def doesExist(self):
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         cursor.execute(f"SELECT subid FROM users WHERE houseno={self.user.houseno}")
 
@@ -33,7 +35,9 @@ class Subscription:
         self.auto_renew = 1 if auto_renew else 0
 
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         cursor.execute(f"SELECT subid FROM subs WHERE type='{self.sub_type}'")
         subid = int(cursor.fetchall()[0][0])
@@ -77,7 +81,9 @@ class Subscription:
 
     def noMilkNextDay(self):
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         try:
             cursor.execute(
@@ -96,7 +102,9 @@ class Subscription:
         self.resume_date = resume_date
 
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         cursor.execute(
             f"SELECT DATE_ADD(sub_start, INTERVAL 1 MONTH) FROM users WHERE houseno={self.user.houseno}"
@@ -155,7 +163,9 @@ class Subscription:
 
     def deliver_milk_today(self):
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         cursor.execute(
             f"SELECT milk_delivered FROM users WHERE houseno={self.user.houseno}"

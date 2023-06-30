@@ -19,7 +19,9 @@ def milk_only_next_day(milkOnlyNextDayParams: MilkOnlyNextDayParams):
     params_dict = milkOnlyNextDayParams.dict()
     houseno = params_dict["houseno"]
 
-    from db import con, cursor
+    from db import con
+
+    cursor = con.cursor()
 
     cursor.execute(f"UPDATE users SET milk_next_day=1 WHERE houseno={houseno}")
     con.commit()

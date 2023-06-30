@@ -51,7 +51,9 @@ def could_not_deliver(couldNotDeliverParams: CouldNotDeliverParams):
 @app.get("/admin/get_paid_details")
 def get_paid_details():
     connect()
-    from db import con, cursor
+    from db import con
+
+    cursor = con.cursor()
 
     cursor.execute("SELECT wing, houseno, bill_due, bills_paid FROM users")
     result = cursor.fetchall()
@@ -68,7 +70,9 @@ def get_paid_details():
 @app.get("/admin/get_due_details")
 def get_due_details():
     connect()
-    from db import con, cursor
+    from db import con
+
+    cursor = con.cursor()
 
     cursor.execute("SELECT wing, houseno, bill_due, bill_amt FROM users")
     result = cursor.fetchall()
@@ -89,7 +93,9 @@ def get_user_paid_details(getUserPaidDetailsParams: GetUserPaidDetailsParams):
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]
 
-    from db import con, cursor
+    from db import con
+
+    cursor = con.cursor()
 
     cursor.execute(f"SELECT bills_paid FROM {wing}{houseno}")
 
@@ -114,7 +120,9 @@ def get_user_due_details(getUserDueDetailsParams: GetUserDueDetailsParams):
     params_dict = getUserDueDetailsParams.dict()
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]
-    from db import con, cursor
+    from db import con
+
+    cursor = con.cursor()
 
     cursor.execute(f"SELECT bills_due FROM {wing}{houseno}")
 
@@ -140,7 +148,9 @@ def get_user_sub_details(getUserLatestSubDetailsParams: GetUserLatestSubDetailsP
     connect()
     params_dict = getUserLatestSubDetailsParams.dict()
     houseno = params_dict["houseno"]
-    from db import con, cursor
+    from db import con
+
+    cursor = con.cursor()
 
     cursor.execute(
         f"SELECT subid, milkid, sub_start, omit_days, auto_renew FROM users WHERE houseno={houseno}"
@@ -169,12 +179,15 @@ def query(queryParams: QueryParams):
     connect()
     params_dict = queryParams.dict()
     query = params_dict["query"]
-    from db import con, cursor
+    from db import con
+
+    cursor = con.cursor()
 
     try:
         cursor.execute(query)
         result = [list(row) for row in cursor.fetchall()]
     except Exception as e:
+        print(e)
         disconnect()
         return {"error": "QUERY_ERROR", "message": e}
 

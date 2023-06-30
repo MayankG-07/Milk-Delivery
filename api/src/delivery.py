@@ -10,7 +10,9 @@ class Delivery:
 
     def get_next_day_details(self):
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         cursor.execute("SELECT wing, houseno FROM users WHERE milk_next_day=1")
         result = cursor.fetchall()
@@ -26,7 +28,9 @@ class Delivery:
 
     def could_not_deliver(self, user: User):
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         cursor.execute(
             f"SELECT could_not_deliver FROM users WHERE houseno={user.houseno}"

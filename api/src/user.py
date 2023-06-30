@@ -19,7 +19,9 @@ class User:
 
     def register(self):
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         cursor.execute(f"SELECT * FROM users WHERE houseno={self.houseno}")
         result = cursor.fetchall()
@@ -68,7 +70,9 @@ class User:
 
     def loginPassword(self):
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         cursor.execute(
             f"SELECT password FROM users WHERE wing='{self.wing}' AND houseno={self.houseno}"
@@ -94,7 +98,9 @@ class User:
 
     def loginOtp(self):
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         cursor.execute(
             f"SELECT otp, otpGenTime FROM users WHERE houseno={self.houseno}"
@@ -136,7 +142,9 @@ class User:
 
     def verify_email(self):
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         try:
             cursor.execute(
@@ -152,7 +160,9 @@ class User:
 
     def get_details(self):
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         cursor.execute(f"SELECT * FROM users WHERE houseno={self.houseno}")
         result = cursor.fetchall()[0]

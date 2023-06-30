@@ -12,7 +12,9 @@ class Bill:
         houseno = details["houseno"]
 
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         cursor.execute(f"SELECT bill_amt, bill_due FROM users WHERE houseno={houseno}")
 
@@ -77,7 +79,9 @@ class Bill:
 
     def pay(self):
         connect()
-        from db import con, cursor
+        from db import con
+
+        cursor = con.cursor()
 
         cursor.execute(
             f"SELECT bill_due, bill_amt, bills_paid FROM users WHERE houseno={self.user.houseno}"

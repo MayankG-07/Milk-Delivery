@@ -16,7 +16,9 @@ def get_otp(getOtpParams: GetOtpParams):
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]
 
-    from db import con, cursor
+    from db import con
+
+    cursor = con.cursor()
 
     cursor.execute(f"SELECT email FROM users WHERE wing='{wing}' AND houseno={houseno}")
 
