@@ -9,7 +9,7 @@ class Email:
         self.body = body
         self.html = html
 
-    def send(self):
+    async def send(self):
         msg = EmailMessage()
         msg["From"] = "mg.lbms07@gmail.com"
         msg["To"] = self.to

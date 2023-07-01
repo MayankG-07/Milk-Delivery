@@ -16,7 +16,7 @@ class LoginOtpParams(BaseModel):
 
 
 @app.patch("/api/login/password")
-def login_with_password(loginPasswordParams: LoginPasswordParams):
+async def login_with_password(loginPasswordParams: LoginPasswordParams):
     params_dict = loginPasswordParams.dict()
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]
@@ -28,7 +28,7 @@ def login_with_password(loginPasswordParams: LoginPasswordParams):
 
 
 @app.patch("/api/login/otp")
-def login_with_otp(loginOtpParams: LoginOtpParams):
+async def login_with_otp(loginOtpParams: LoginOtpParams):
     params_dict = loginOtpParams.dict()
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]

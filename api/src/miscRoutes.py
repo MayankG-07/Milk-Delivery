@@ -14,7 +14,7 @@ class VerifyEmailParams(BaseModel):
 
 
 @app.put("/api/milk_only_next_day")
-def milk_only_next_day(milkOnlyNextDayParams: MilkOnlyNextDayParams):
+async def milk_only_next_day(milkOnlyNextDayParams: MilkOnlyNextDayParams):
     connect()
     params_dict = milkOnlyNextDayParams.dict()
     houseno = params_dict["houseno"]
@@ -37,7 +37,7 @@ def milk_only_next_day(milkOnlyNextDayParams: MilkOnlyNextDayParams):
 
 
 @app.patch("/api/verify_email")
-def verify_email(verifyEmailParams: VerifyEmailParams):
+async def verify_email(verifyEmailParams: VerifyEmailParams):
     params_dict = verifyEmailParams.dict()
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]

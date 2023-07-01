@@ -13,6 +13,6 @@ def connect():
     con = connector.connect(host=host, user=user, password=password, database=database)
 
 
-def disconnect():
+async def disconnect():
     global con
     con.close()

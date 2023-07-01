@@ -7,7 +7,7 @@ class Bill:
     def __init__(self, user: User):
         self.user = user
 
-    def generate(self):
+    async def generate(self):
         details = self.user.get_details()["details"]
         houseno = details["houseno"]
 
@@ -77,7 +77,7 @@ class Bill:
             "bill_due": sub_end,
         }
 
-    def pay(self):
+    async def pay(self):
         connect()
         from db import con
 

@@ -15,7 +15,7 @@ class PayBillParams(BaseModel):
 
 
 @app.put("/api/sub/generate_bill")
-def generate_bill(generateBillParams: GenerateBillParams):
+async def generate_bill(generateBillParams: GenerateBillParams):
     params_dict = generateBillParams.dict()
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]
@@ -28,7 +28,7 @@ def generate_bill(generateBillParams: GenerateBillParams):
 
 
 @app.put("/api/sub/pay_bill")
-def pay_bill(payBillParams: PayBillParams):
+async def pay_bill(payBillParams: PayBillParams):
     params_dict = payBillParams.dict()
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]
