@@ -144,7 +144,9 @@ def get_user_due_details(getUserDueDetailsParams: GetUserDueDetailsParams):
 
 
 @app.put("/admin/get_user_sub_details")
-def get_user_sub_details(getUserLatestSubDetailsParams: GetUserLatestSubDetailsParams):
+def get_user_sub_details(
+    getUserLatestSubDetailsParams: GetUserLatestSubDetailsParams,
+):
     connect()
     params_dict = getUserLatestSubDetailsParams.dict()
     houseno = params_dict["houseno"]

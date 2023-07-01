@@ -6,7 +6,7 @@ import { PropTypes } from "prop-types";
 
 export const Sub = ({
   subid,
-  milkid = 0,
+  milkid,
   sub_start = new Date(),
   current = false,
 }) => {
@@ -14,7 +14,7 @@ export const Sub = ({
 
   useEffect(() => {
     console.log("useEffect called");
-    // axios.get(`${url}`).then(res => console.log(res.data.))
+    axios.get(`${url}`).then((res) => console.log(res.data.message));
     axios
       .put(`${url}/admin/query`, {
         query: `SELECT * FROM subs WHERE subid=${subid}`,
@@ -22,15 +22,47 @@ export const Sub = ({
       .then((res) => {
         console.log("query run");
         console.log(res);
-        setSubDetails({
-          ...subDetails,
-          sub: { id: res.data.data[0], type: res.data.data[1] },
-        });
+        const sub = res.data.data;
+        setSubDetails((details) =>
+          sub
+            ? {
+                ...details,
+                sub: { id: sub[0], type: sub[1] },
+              }
+            : details
+        );
       })
       .catch((err) => {
         console.log(err);
       });
-  });
+
+    axios
+      .put(`${url}/admin/query`, {
+        query: `SELECT * FROM milks WHERE milkid=${milkid}`,
+      })
+      .then((res) => {
+        console.log("query run");
+        console.log(res);
+        const milk = res.data.data;
+        setSubDetails((details) =>
+          milk
+            ? {
+                ...details,
+                milk: {
+                  id: milk[0],
+                  company: milk[1],
+                  type: milk[2],
+                  quantity: milk[3],
+                  price: milk[4],
+                },
+              }
+            : details
+        );
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, [subid, milkid]);
 
   return (
     <>
