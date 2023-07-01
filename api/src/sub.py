@@ -7,7 +7,7 @@ class Subscription:
     def __init__(self, user: User):
         self.user = user
 
-    def doesExist(self):
+    async def doesExist(self):
         connect()
         from db import con
 
@@ -19,7 +19,7 @@ class Subscription:
         disconnect()
         return True if result is not None else False
 
-    def activate(
+    async def activate(
         self,
         sub_type: str,
         milk_comp: str,
@@ -79,7 +79,7 @@ class Subscription:
             disconnect()
             return {"error": e}
 
-    def noMilkNextDay(self):
+    async def noMilkNextDay(self):
         connect()
         from db import con
 
@@ -97,7 +97,7 @@ class Subscription:
             disconnect()
             return {"error": e}
 
-    def pause(self, pause_date: str, resume_date: str):
+    async def pause(self, pause_date: str, resume_date: str):
         self.pause_date = pause_date
         self.resume_date = resume_date
 
@@ -161,7 +161,7 @@ class Subscription:
         disconnect()
         return {"success": "SUB_PAUSE_SUCCESS"}
 
-    def deliver_milk_today(self):
+    async def deliver_milk_today(self):
         connect()
         from db import con
 

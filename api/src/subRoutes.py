@@ -29,7 +29,7 @@ class PauseSubParams(BaseModel):
 
 
 @app.post("/api/sub/new")
-def subscribe(subscribeParams: SubscribeParams):
+async def subscribe(subscribeParams: SubscribeParams):
     params_dict = subscribeParams.dict()
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]
@@ -53,7 +53,7 @@ def subscribe(subscribeParams: SubscribeParams):
 
 
 @app.patch("/api/sub/no_milk_next_day")
-def no_milk_next_day(noMilkNextDayParams: NoMilkNextDayParams):
+async def no_milk_next_day(noMilkNextDayParams: NoMilkNextDayParams):
     params_dict = noMilkNextDayParams.dict()
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]
@@ -68,7 +68,7 @@ def no_milk_next_day(noMilkNextDayParams: NoMilkNextDayParams):
 
 
 @app.patch("/api/sub/pause")
-def pause_sub(pauseSubParams: PauseSubParams):
+async def pause_sub(pauseSubParams: PauseSubParams):
     params_dict = pauseSubParams.dict()
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]

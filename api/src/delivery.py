@@ -8,7 +8,7 @@ class Delivery:
     def __init__(self):
         pass
 
-    def get_next_day_details(self):
+    async def get_next_day_details(self):
         connect()
         from db import con
 
@@ -20,13 +20,13 @@ class Delivery:
         disconnect()
         return {"success": "GET_DELIVERY_DETS_SUCCESS", "data": users}
 
-    def deliver_today(self, user: User):
+    async def deliver_today(self, user: User):
         sub = Subscription(user)
         message = sub.deliver_milk_today()
 
         return message
 
-    def could_not_deliver(self, user: User):
+    async def could_not_deliver(self, user: User):
         connect()
         from db import con
 

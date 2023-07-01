@@ -11,7 +11,7 @@ class RegisterParams(BaseModel):
 
 
 @app.post("/api/register")
-def register(registerParams: RegisterParams):
+async def register(registerParams: RegisterParams):
     params_dict = registerParams.dict()
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]

@@ -30,14 +30,14 @@ class QueryParams(BaseModel):
 
 
 @app.get("/admin/get_next_day_delivery_details")
-def get_next_day_delivery_details():
+async def get_next_day_delivery_details():
     delivery = Delivery()
     message = delivery.get_next_day_details()
     return message
 
 
 @app.patch("/admin/could_not_deliver")
-def could_not_deliver(couldNotDeliverParams: CouldNotDeliverParams):
+async def could_not_deliver(couldNotDeliverParams: CouldNotDeliverParams):
     params_dict = couldNotDeliverParams.dict()
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]
@@ -49,7 +49,7 @@ def could_not_deliver(couldNotDeliverParams: CouldNotDeliverParams):
 
 
 @app.get("/admin/get_paid_details")
-def get_paid_details():
+async def get_paid_details():
     connect()
     from db import con
 
@@ -68,7 +68,7 @@ def get_paid_details():
 
 
 @app.get("/admin/get_due_details")
-def get_due_details():
+async def get_due_details():
     connect()
     from db import con
 
@@ -87,7 +87,7 @@ def get_due_details():
 
 
 @app.put("/admin/get_paid_details/user")
-def get_user_paid_details(getUserPaidDetailsParams: GetUserPaidDetailsParams):
+async def get_user_paid_details(getUserPaidDetailsParams: GetUserPaidDetailsParams):
     connect()
     params_dict = getUserPaidDetailsParams.dict()
     wing = params_dict["wing"]
@@ -115,7 +115,7 @@ def get_user_paid_details(getUserPaidDetailsParams: GetUserPaidDetailsParams):
 
 
 @app.put("/admin/get_due_details/user")
-def get_user_due_details(getUserDueDetailsParams: GetUserDueDetailsParams):
+async def get_user_due_details(getUserDueDetailsParams: GetUserDueDetailsParams):
     connect()
     params_dict = getUserDueDetailsParams.dict()
     wing = params_dict["wing"]
@@ -144,7 +144,7 @@ def get_user_due_details(getUserDueDetailsParams: GetUserDueDetailsParams):
 
 
 @app.put("/admin/get_user_sub_details")
-def get_user_sub_details(
+async def get_user_sub_details(
     getUserLatestSubDetailsParams: GetUserLatestSubDetailsParams,
 ):
     connect()
@@ -177,7 +177,7 @@ def get_user_sub_details(
 
 
 @app.put("/admin/query")
-def query(queryParams: QueryParams):
+async def query(queryParams: QueryParams):
     connect()
     params_dict = queryParams.dict()
     query = params_dict["query"]

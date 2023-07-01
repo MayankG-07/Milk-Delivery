@@ -4,7 +4,7 @@ from email_config import Email
 
 
 class OTP:
-    def __init__(self, email: str):
+    async def __init__(self, email: str):
         self.email = email
         self.value = randrange(1111, 9999)
 
@@ -34,7 +34,7 @@ class OTP:
         con.commit()
         disconnect()
 
-    def send(self):
+    async def send(self):
         # email_body = """Dear Customer
 
         #                 You requested a one time password at Patel Kirana Store

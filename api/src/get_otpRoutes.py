@@ -10,7 +10,7 @@ class GetOtpParams(BaseModel):
 
 
 @app.patch("/api/get_otp")
-def get_otp(getOtpParams: GetOtpParams):
+async def get_otp(getOtpParams: GetOtpParams):
     connect()
     params_dict = getOtpParams.dict()
     wing = params_dict["wing"]

@@ -17,7 +17,7 @@ class User:
         self.password = Password(password)
         self.otp = otp
 
-    def register(self):
+    async def register(self):
         connect()
         from db import con
 
@@ -68,7 +68,7 @@ class User:
         except Exception as e:
             return {"error": str(e)}
 
-    def loginPassword(self):
+    async def loginPassword(self):
         connect()
         from db import con
 
@@ -96,7 +96,7 @@ class User:
             else {"error": "INVALID_CREDS"}
         )
 
-    def loginOtp(self):
+    async def loginOtp(self):
         connect()
         from db import con
 
@@ -140,7 +140,7 @@ class User:
         disconnect()
         return {"success": "LOGIN_SUCCESS"}
 
-    def verify_email(self):
+    async def verify_email(self):
         connect()
         from db import con
 
@@ -158,7 +158,7 @@ class User:
         disconnect()
         return {"success": "EMAIL_VERIFY_SUCCESS"}
 
-    def get_details(self):
+    async def get_details(self):
         connect()
         from db import con
 
