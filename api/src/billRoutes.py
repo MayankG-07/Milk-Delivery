@@ -23,7 +23,7 @@ async def generate_bill(generateBillParams: GenerateBillParams):
     user = User(wing, houseno)
     bill = Bill(user)
 
-    message = bill.generate()
+    message = await bill.generate()
     return message
 
 
@@ -36,5 +36,5 @@ async def pay_bill(payBillParams: PayBillParams):
     user = User(wing, houseno)
     bill = Bill(user)
 
-    message = bill.pay()
+    message = await bill.pay()
     return message

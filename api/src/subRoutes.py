@@ -45,10 +45,12 @@ async def subscribe(subscribeParams: SubscribeParams):
 
     user = User(wing, houseno)
     sub = Subscription(user)
-    if sub.doesExist():
+    if await sub.doesExist():
         return {"error": "SUB_EXISTS"}
 
-    message = sub.activate(sub_type, milk_comp, milk_type, start_date, auto_renew, omit)
+    message = await sub.activate(
+        sub_type, milk_comp, milk_type, start_date, auto_renew, omit
+    )
     return message
 
 
@@ -60,10 +62,10 @@ async def no_milk_next_day(noMilkNextDayParams: NoMilkNextDayParams):
 
     user = User(wing, houseno)
     sub = Subscription(user)
-    if not sub.doesExist():
+    if not await sub.doesExist():
         return {"error": "SUB_NOT_EXISTS"}
 
-    message = sub.noMilkNextDay()
+    message = await sub.noMilkNextDay()
     return message
 
 
@@ -78,8 +80,8 @@ async def pause_sub(pauseSubParams: PauseSubParams):
     user = User(wing, houseno)
     sub = Subscription(user)
 
-    if not sub.doesExist():
+    if not await sub.doesExist():
         return {"error": "SUB_NOT_EXISTS"}
 
-    message = sub.pause(pause_date, resume_date)
+    message = await sub.pause(pause_date, resume_date)
     return message

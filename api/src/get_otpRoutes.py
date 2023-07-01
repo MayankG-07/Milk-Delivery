@@ -33,6 +33,6 @@ async def get_otp(getOtpParams: GetOtpParams):
     #     return {"error": "INVALID_CREDS"}
 
     new_otp = OTP(email)
-    message = new_otp.send()
+    message = await new_otp.send()
     disconnect()
     return message

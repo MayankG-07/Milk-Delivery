@@ -19,6 +19,6 @@ async def register(registerParams: RegisterParams):
     password = params_dict["password"]
 
     new_user = User(wing, houseno, email, password)
-    message = new_user.register()
+    message = await new_user.register()
 
     return message

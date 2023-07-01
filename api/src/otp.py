@@ -4,7 +4,7 @@ from email_config import Email
 
 
 class OTP:
-    async def __init__(self, email: str):
+    def __init__(self, email: str):
         self.email = email
         self.value = randrange(1111, 9999)
 
@@ -101,7 +101,7 @@ class OTP:
         )
 
         try:
-            new_otp_email.send()
+            await new_otp_email.send()
             return {"success": "OTP_SENT_SUCCESS", "data": {"otp": self.value}}
         except Exception as e:
             return {"error": e}

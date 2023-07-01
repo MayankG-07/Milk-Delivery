@@ -23,7 +23,7 @@ async def login_with_password(loginPasswordParams: LoginPasswordParams):
     password = params_dict["password"]
 
     new_user = User(wing=wing, houseno=houseno, password=password)
-    message = new_user.loginPassword()
+    message = await new_user.loginPassword()
     return message
 
 
@@ -35,5 +35,5 @@ async def login_with_otp(loginOtpParams: LoginOtpParams):
     otp = params_dict["otp"]
 
     new_user = User(wing=wing, houseno=houseno, otp=otp)
-    message = new_user.loginOtp()
+    message = await new_user.loginOtp()
     return message

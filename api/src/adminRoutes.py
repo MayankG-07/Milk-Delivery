@@ -32,7 +32,7 @@ class QueryParams(BaseModel):
 @app.get("/admin/get_next_day_delivery_details")
 async def get_next_day_delivery_details():
     delivery = Delivery()
-    message = delivery.get_next_day_details()
+    message = await delivery.get_next_day_details()
     return message
 
 
@@ -44,7 +44,7 @@ async def could_not_deliver(couldNotDeliverParams: CouldNotDeliverParams):
 
     delivery = Delivery()
     user = User(wing, houseno)
-    message = delivery.could_not_deliver(user)
+    message = await delivery.could_not_deliver(user)
     return message
 
 
