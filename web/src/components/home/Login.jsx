@@ -164,8 +164,7 @@ export const Login = ({ boxStyles }) => {
     // TODO login redirect code goes here
     // console.log(details.wing, details.houseno);
     handleDetailsChange({ wing: details.wing, houseno: details.houseno });
-    navigate("/home");
-    location.reload();
+    navigate("/dashboard");
   };
 
   return (
