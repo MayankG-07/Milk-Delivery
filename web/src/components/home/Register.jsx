@@ -87,7 +87,7 @@ export const Register = ({ boxStyles }) => {
         <RadioGroup
           value={useState.wing}
           onChange={(_event, newValue) =>
-            setDetails({ ...details, wing: newValue })
+            setDetails((prevDetails) => ({ ...prevDetails, wing: newValue }))
           }
           sx={{ alignItems: "center", justifyContent: "center" }}
           row
@@ -102,9 +102,12 @@ export const Register = ({ boxStyles }) => {
         label="House No"
         onChange={(event) => {
           if (!isNaN(parseInt(event.target.value))) {
-            setDetails({ ...details, houseNo: parseInt(event.target.value) });
+            setDetails((prevDetails) => ({
+              ...prevDetails,
+              houseNo: parseInt(event.target.value),
+            }));
           } else if (event.target.value === "") {
-            setDetails({ ...details, houseNo: "" });
+            setDetails((prevDetails) => ({ ...prevDetails, houseNo: "" }));
           }
         }}
       />
@@ -114,7 +117,10 @@ export const Register = ({ boxStyles }) => {
         label="Email"
         type="email"
         onChange={(event) =>
-          setDetails({ ...details, email: event.target.value })
+          setDetails((prevDetails) => ({
+            ...prevDetails,
+            email: event.target.value,
+          }))
         }
       />
       <TextField
@@ -123,10 +129,10 @@ export const Register = ({ boxStyles }) => {
         label="Password"
         type={details.password.show ? "text" : "password"}
         onChange={(event) =>
-          setDetails({
-            ...details,
-            password: { ...details.password, value: event.target.value },
-          })
+          setDetails((prevDetails) => ({
+            ...prevDetails,
+            password: { ...prevDetails.password, value: event.target.value },
+          }))
         }
         InputProps={{
           endAdornment: (
@@ -134,13 +140,13 @@ export const Register = ({ boxStyles }) => {
               <IconButton
                 edge="end"
                 onClick={() =>
-                  setDetails({
-                    ...details,
+                  setDetails((prevDetails) => ({
+                    ...prevDetails,
                     password: {
-                      ...details.password,
-                      show: !details.password.show,
+                      ...prevDetails.password,
+                      show: !prevDetails.password.show,
                     },
-                  })
+                  }))
                 }
               >
                 {details.password.show ? <VisibilityOff /> : <Visibility />}
@@ -155,13 +161,13 @@ export const Register = ({ boxStyles }) => {
         label="Confirm Password"
         type={details.confirmPassword.show ? "text" : "password"}
         onChange={(event) =>
-          setDetails({
-            ...details,
+          setDetails((prevDetails) => ({
+            ...prevDetails,
             confirmPassword: {
-              ...details.confirmPassword,
+              ...prevDetails.confirmPassword,
               value: event.target.value,
             },
-          })
+          }))
         }
         InputProps={{
           endAdornment: (
@@ -169,13 +175,13 @@ export const Register = ({ boxStyles }) => {
               <IconButton
                 edge="end"
                 onClick={() =>
-                  setDetails({
-                    ...details,
+                  setDetails((prevDetails) => ({
+                    ...prevDetails,
                     confirmPassword: {
-                      ...details.confirmPassword,
-                      show: !details.confirmPassword.show,
+                      ...prevDetails.confirmPassword,
+                      show: !prevDetails.confirmPassword.show,
                     },
-                  })
+                  }))
                 }
               >
                 {details.confirmPassword.show ? (

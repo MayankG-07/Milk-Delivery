@@ -34,7 +34,7 @@ export const VerifyEmail = ({ justAfterRegister = false }) => {
   const [emailLoading, setEmailLoading] = useState(false);
 
   const handleSendOtp = () => {
-    setOtp({ ...otp, loading: true });
+    setOtp((prevOtp) => ({ ...prevOtp, loading: true }));
 
     axios
       .patch(`${url}/api/get_otp`, {
@@ -42,24 +42,24 @@ export const VerifyEmail = ({ justAfterRegister = false }) => {
         houseno: userDetails.houseno,
       })
       .then((res) => {
-        setOtp({ ...otp, loading: false });
+        setOtp((prevOtp) => ({ ...prevOtp, loading: false }));
         if (res.data.success) {
           const time = new Date();
           time.setSeconds(time.getSeconds() + 300);
-          setOtp({
-            ...otp,
+          setOtp((prevOtp) => ({
+            ...prevOtp,
             sent: true,
             sentValue: res.data.data.otp,
             time,
             sendAgain: false,
-          });
+          }));
         } else {
           console.log(res.data.error);
           alert("An error occurred");
         }
       })
       .catch((error) => {
-        setOtp({ ...otp, loading: false });
+        setOtp((prevOtp) => ({ ...prevOtp, loading: false }));
         console.log(error);
         alert("An error occurred");
       });
@@ -148,9 +148,9 @@ export const VerifyEmail = ({ justAfterRegister = false }) => {
           value={!otp.value ? "" : otp.value}
           onChange={(event) => {
             if (!isNaN(parseInt(event.target.value))) {
-              setOtp({ ...otp, value: event.target.value });
+              setOtp((prevOtp) => ({ ...prevOtp, value: event.target.value }));
             } else if (event.target.value === "") {
-              setOtp({ ...otp, value: "" });
+              setOtp((prevOtp) => ({ ...prevOtp, value: "" }));
             }
           }}
           sx={{ marginY: 1, width: justAfterRegister ? "87%" : "300px" }}
@@ -203,7 +203,11 @@ export const VerifyEmail = ({ justAfterRegister = false }) => {
                       </>
                     );
                   } else {
-                    setOtp({ ...otp, sendAgain: true, time: null });
+                    setOtp((prevOtp) => ({
+                      ...prevOtp,
+                      sendAgain: true,
+                      time: null,
+                    }));
                   }
                 }}
               </Timer>

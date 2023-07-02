@@ -50,7 +50,7 @@ export const Login = ({ boxStyles }) => {
       return;
     }
 
-    setOtp({ ...otp, loading: true });
+    setOtp((prevOtp) => ({ ...prevOtp, loading: true }));
 
     axios
       .patch(`${url}/api/get_otp`, {
@@ -58,17 +58,18 @@ export const Login = ({ boxStyles }) => {
         houseno: details.houseno,
       })
       .then((res) => {
-        setOtp({ ...otp, loading: false });
+        setOtp((prevOtp) => ({ ...prevOtp, loading: false }));
         if (res.data.success) {
           const time = new Date();
           time.setSeconds(time.getSeconds() + 300);
 
-          setOtp({
+          setOtp((prevOtp) => ({
+            ...prevOtp,
             sent: true,
             sentValue: res.data.data.otp,
             sendAgain: false,
             time,
-          });
+          }));
           return;
         } else if (res.data.error === "INVALID_CREDS") {
           alert("Invalid details");
@@ -80,7 +81,7 @@ export const Login = ({ boxStyles }) => {
         }
       })
       .catch((error) => {
-        setOtp({ ...otp, loading: false });
+        setOtp((prevOtp) => ({ ...prevOtp, loading: false }));
         alert("An error occurred");
         console.log(error);
       });
@@ -95,7 +96,7 @@ export const Login = ({ boxStyles }) => {
         otp: otp.value,
       })
       .then((res) => {
-        setLoginType({ ...loginType, loading: false });
+        setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
         if (res.data.success) {
           login();
           return;
@@ -109,7 +110,7 @@ export const Login = ({ boxStyles }) => {
         }
       })
       .catch((error) => {
-        setLoginType({ ...loginType, loading: false });
+        setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
         alert("An error occurred");
         console.log(error);
         return;
@@ -118,10 +119,10 @@ export const Login = ({ boxStyles }) => {
 
   const handleLoginPassword = () => {
     if (details.password.show) {
-      setDetails({
-        ...details,
-        password: { ...details.password, show: false },
-      });
+      setDetails((prevDetails) => ({
+        ...prevDetails,
+        password: { ...prevDetails.password, show: false },
+      }));
     }
 
     if (!details.houseno || !details.password.value) {
@@ -129,7 +130,7 @@ export const Login = ({ boxStyles }) => {
       return;
     }
 
-    setLoginType({ ...loginType, loading: true });
+    setLoginType((prevLoginType) => ({ ...prevLoginType, loading: true }));
 
     axios
       .patch(`${url}/api/login/password`, {
@@ -138,7 +139,7 @@ export const Login = ({ boxStyles }) => {
         password: details.password.value,
       })
       .then((res) => {
-        setLoginType({ ...loginType, loading: false });
+        setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
         console.log(res);
         if (res.data.success) {
           login();
@@ -153,7 +154,7 @@ export const Login = ({ boxStyles }) => {
         }
       })
       .catch((error) => {
-        setLoginType({ ...loginType, loading: false });
+        setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
         alert("An error occurred");
         console.log(error);
         return;
@@ -181,7 +182,7 @@ export const Login = ({ boxStyles }) => {
           <RadioGroup
             value={details.wing ? details.wing : ""}
             onChange={(_event, newValue) =>
-              setDetails({ ...details, wing: newValue })
+              setDetails((prevDetails) => ({ ...prevDetails, wing: newValue }))
             }
             row
           >
@@ -196,9 +197,12 @@ export const Login = ({ boxStyles }) => {
         label="House No"
         onChange={(event) => {
           if (!isNaN(parseInt(event.target.value))) {
-            setDetails({ ...details, houseno: parseInt(event.target.value) });
+            setDetails((prevDetails) => ({
+              ...prevDetails,
+              houseno: parseInt(event.target.value),
+            }));
           } else if (event.target.value === "") {
-            setDetails({ ...details, houseno: null });
+            setDetails((prevDetails) => ({ ...prevDetails, houseno: null }));
           }
         }}
         disabled={otp.loading}
@@ -219,7 +223,11 @@ export const Login = ({ boxStyles }) => {
                               />
                             );
                           } else {
-                            setOtp({ ...otp, sendAgain: true, time: null });
+                            setOtp((prevOtp) => ({
+                              ...prevOtp,
+                              sendAgain: true,
+                              time: null,
+                            }));
                             return <></>;
                           }
                         }}
@@ -253,9 +261,12 @@ export const Login = ({ boxStyles }) => {
             label="OTP"
             onChange={(event) => {
               if (!isNaN(parseInt(event.target.value))) {
-                setOtp({ ...otp, value: parseInt(event.target.value) });
+                setOtp((prevOtp) => ({
+                  ...prevOtp,
+                  value: parseInt(event.target.value),
+                }));
               } else if (event.target.value === "") {
-                setOtp({ ...otp, value: null });
+                setOtp((prevOtp) => ({ ...prevOtp, value: null }));
               }
             }}
             disabled={!otp.sent}
@@ -269,10 +280,13 @@ export const Login = ({ boxStyles }) => {
             label="Password"
             type={details.password.show ? "text" : "password"}
             onChange={(event) =>
-              setDetails({
-                ...details,
-                password: { ...details.password, value: event.target.value },
-              })
+              setDetails((prevDetails) => ({
+                ...prevDetails,
+                password: {
+                  ...prevDetails.password,
+                  value: event.target.value,
+                },
+              }))
             }
             InputProps={{
               endAdornment: (
@@ -280,13 +294,13 @@ export const Login = ({ boxStyles }) => {
                   <IconButton
                     edge="end"
                     onClick={() =>
-                      setDetails({
-                        ...details,
+                      setDetails((prevDetails) => ({
+                        ...prevDetails,
                         password: {
-                          ...details.password,
-                          show: !details.password.show,
+                          ...prevDetails.password,
+                          show: !prevDetails.password.show,
                         },
-                      })
+                      }))
                     }
                   >
                     {details.password.show ? <VisibilityOff /> : <Visibility />}
@@ -332,10 +346,11 @@ export const Login = ({ boxStyles }) => {
       </Box>
       <Button
         variant="outlined"
-        onClick={
-          loginType.withOtp
-            ? () => setLoginType({ ...loginType, withOtp: false })
-            : () => setLoginType({ ...loginType, withOtp: true })
+        onClick={() =>
+          setLoginType((prevLoginType) => ({
+            ...prevLoginType,
+            withOtp: !prevLoginType.withOtp,
+          }))
         }
         sx={{ marginY: 0.15, width: "87%", color: "primary" }}
       >
