@@ -10,7 +10,6 @@ import {
   InputAdornment,
   IconButton,
   FormControl,
-  FormLabel,
   RadioGroup,
   FormControlLabel,
   Radio,
@@ -174,20 +173,24 @@ export const Login = ({ boxStyles }) => {
       <Typography sx={{ paddingY: 2 }} variant="h5">
         Login
       </Typography>
-      <Divider sx={{ marginBottom: 1 }} />
-      <FormControl disabled={otp.loading}>
-        <FormLabel>Wing:</FormLabel>
-        <RadioGroup
-          value={details.wing ? details.wing : ""}
-          onChange={(_event, newValue) =>
-            setDetails({ ...details, wing: newValue })
-          }
-          row
-        >
-          <FormControlLabel value="a" control={<Radio />} label="A" />
-          <FormControlLabel value="b" control={<Radio />} label="B" />
-        </RadioGroup>
-      </FormControl>
+      <Divider sx={{ marginBottom: 1, width: "80%" }} />
+      <Box sx={{ display: "flex", flexDirection: "row", width: "auto" }}>
+        <FormControl disabled={otp.loading}>
+          <Typography variant="body1" color="text.secondary">
+            Wing:
+          </Typography>
+          <RadioGroup
+            value={details.wing ? details.wing : ""}
+            onChange={(_event, newValue) =>
+              setDetails({ ...details, wing: newValue })
+            }
+            row
+          >
+            <FormControlLabel value="a" control={<Radio />} label="A" />
+            <FormControlLabel value="b" control={<Radio />} label="B" />
+          </RadioGroup>
+        </FormControl>
+      </Box>
       <TextField
         sx={{ marginY: 1, width: "87%", color: "primary" }}
         value={details.houseno ? details.houseno : ""}

@@ -25,19 +25,13 @@ const App = () => {
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <Navbar />
-      <div>
-        <center>
-          <Box sx={{ alignItems: "center", justifyContent: "center" }}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="home" element={<Home />} />
-              <Route path="login" element={<Login />} />
-              <Route path="register" element={<Register />} />
-              <Route path="*" element={<NotFound404 />} />
-            </Routes>
-          </Box>
-        </center>
-      </div>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="home" element={<Home />} />
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+        <Route path="*" element={<NotFound404 />} />
+      </Routes>
     </ThemeProvider>
   );
 };

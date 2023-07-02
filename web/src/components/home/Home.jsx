@@ -16,7 +16,15 @@ const Home = () => {
     <>
       {Object.keys(userDetails).length === 0 ? (
         <Box>
-          <Login />
+          <Login
+            boxStyles={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 10,
+              flexDirection: "column",
+            }}
+          />
         </Box>
       ) : (
         <Box>
