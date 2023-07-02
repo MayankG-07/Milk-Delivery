@@ -1,5 +1,5 @@
-from password import Password
-from db import connect, disconnect
+from src.password import Password
+from src.db import connect, disconnect
 
 
 class User:
@@ -19,7 +19,7 @@ class User:
 
     async def register(self):
         connect()
-        from db import con
+        from src.db import con
 
         cursor = con.cursor()
 
@@ -70,7 +70,7 @@ class User:
 
     async def loginPassword(self):
         connect()
-        from db import con
+        from src.db import con
 
         cursor = con.cursor()
 
@@ -98,7 +98,7 @@ class User:
 
     async def loginOtp(self):
         connect()
-        from db import con
+        from src.db import con
 
         cursor = con.cursor()
 
@@ -142,7 +142,7 @@ class User:
 
     async def verify_email(self):
         connect()
-        from db import con
+        from src.db import con
 
         cursor = con.cursor()
 
@@ -160,7 +160,7 @@ class User:
 
     async def get_details(self):
         connect()
-        from db import con
+        from src.db import con
 
         cursor = con.cursor()
 

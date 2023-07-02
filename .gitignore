@@ -1,3 +1,5 @@
-api/.vscode
+api/.vscode/
 web/node_modules/
 api/src/__pycache__/
+api/src/.pytest_cache/
+api/src/tests/__pycache__/

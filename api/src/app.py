@@ -16,20 +16,20 @@ async def root():
     return {"message": "hello world"}
 
 
-import bill
-import db
-import delivery
-import email_config
-import key
-import otp
-import password
-import sub
-import user
+import src.bill
+import src.db
+import src.delivery
+import src.email_config
+import src.key
+import src.otp
+import src.password
+import src.sub
+import src.user
 
-import adminRoutes
-import billRoutes
-import get_otpRoutes
-import loginRoutes
-import miscRoutes
-import registerRoutes
-import subRoutes
+import src.adminRoutes
+import src.billRoutes
+import src.get_otpRoutes
+import src.loginRoutes
+import src.miscRoutes
+import src.registerRoutes
+import src.subRoutes

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
-from app import app
-from user import User
+from src.app import app
+from src.user import User
 
 
 class LoginPasswordParams(BaseModel):

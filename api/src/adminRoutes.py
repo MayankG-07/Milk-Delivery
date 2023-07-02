@@ -1,8 +1,8 @@
-from app import app
-from delivery import Delivery
+from src.app import app
+from src.delivery import Delivery
 from pydantic import BaseModel
-from user import User
-from db import connect, disconnect
+from src.user import User
+from src.db import connect, disconnect
 
 
 class CouldNotDeliverParams(BaseModel):
@@ -51,11 +51,11 @@ async def could_not_deliver(couldNotDeliverParams: CouldNotDeliverParams):
 @app.get("/admin/get_paid_details")
 async def get_paid_details():
     connect()
-    from db import con
+    from src.db import con
 
     cursor = con.cursor()
 
-    cursor.execute("SELECT wing, houseno, bill_due, bills_paid FROM users")
+    cursor.execute("SELECT wing, houseno, bill_due, bills_paid from src.users")
     result = cursor.fetchall()
 
     details = [
@@ -70,11 +70,11 @@ async def get_paid_details():
 @app.get("/admin/get_due_details")
 async def get_due_details():
     connect()
-    from db import con
+    from src.db import con
 
     cursor = con.cursor()
 
-    cursor.execute("SELECT wing, houseno, bill_due, bill_amt FROM users")
+    cursor.execute("SELECT wing, houseno, bill_due, bill_amt from src.users")
     result = cursor.fetchall()
 
     details = [
@@ -93,11 +93,11 @@ async def get_user_paid_details(getUserPaidDetailsParams: GetUserPaidDetailsPara
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]
 
-    from db import con
+    from src.db import con
 
     cursor = con.cursor()
 
-    cursor.execute(f"SELECT bills_paid FROM {wing}{houseno}")
+    cursor.execute(f"SELECT bills_paid from src.{wing}{houseno}")
 
     try:
         result = eval(cursor.fetchall()[0][0])
@@ -120,11 +120,11 @@ async def get_user_due_details(getUserDueDetailsParams: GetUserDueDetailsParams)
     params_dict = getUserDueDetailsParams.dict()
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]
-    from db import con
+    from src.db import con
 
     cursor = con.cursor()
 
-    cursor.execute(f"SELECT bills_due FROM {wing}{houseno}")
+    cursor.execute(f"SELECT bills_due from src.{wing}{houseno}")
 
     result = cursor.fetchall()
 
@@ -150,12 +150,12 @@ async def get_user_sub_details(
     connect()
     params_dict = getUserLatestSubDetailsParams.dict()
     houseno = params_dict["houseno"]
-    from db import con
+    from src.db import con
 
     cursor = con.cursor()
 
     cursor.execute(
-        f"SELECT subid, milkid, sub_start, omit_days, auto_renew FROM users WHERE houseno={houseno}"
+        f"SELECT subid, milkid, sub_start, omit_days, auto_renew from src.users WHERE houseno={houseno}"
     )
 
     result = cursor.fetchall()[0]
@@ -181,7 +181,7 @@ async def query(queryParams: QueryParams):
     connect()
     params_dict = queryParams.dict()
     query = params_dict["query"]
-    from db import con
+    from src.db import con
 
     cursor = con.cursor()
 
