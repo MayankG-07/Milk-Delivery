@@ -27,9 +27,7 @@ const Home = () => {
           />
         </Box>
       ) : (
-        <Box>
-          <Dashboard />
-        </Box>
+        <></>
       )}
     </>
   );
