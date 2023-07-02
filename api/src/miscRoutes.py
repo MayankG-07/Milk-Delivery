@@ -1,6 +1,6 @@
-from src.app import app
-from src.db import connect, disconnect
-from src.user import User
+from app import app
+from db import connect, disconnect
+from user import User
 from pydantic import BaseModel
 
 
@@ -19,7 +19,7 @@ async def milk_only_next_day(milkOnlyNextDayParams: MilkOnlyNextDayParams):
     params_dict = milkOnlyNextDayParams.dict()
     houseno = params_dict["houseno"]
 
-    from src.db import con
+    from db import con
 
     cursor = con.cursor()
 

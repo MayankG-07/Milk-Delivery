@@ -1,6 +1,6 @@
-from src.app import app
-from src.otp import OTP
-from src.db import connect, disconnect
+from app import app
+from otp import OTP
+from db import connect, disconnect
 from pydantic import BaseModel
 
 
@@ -16,7 +16,7 @@ async def get_otp(getOtpParams: GetOtpParams):
     wing = params_dict["wing"]
     houseno = params_dict["houseno"]
 
-    from src.db import con
+    from db import con
 
     cursor = con.cursor()
 

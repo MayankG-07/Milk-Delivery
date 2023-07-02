@@ -1,6 +1,6 @@
 from random import randrange
-from src.db import connect, disconnect
-from src.email_config import Email
+from db import connect, disconnect
+from email_config import Email
 
 
 class OTP:
@@ -9,7 +9,7 @@ class OTP:
         self.value = randrange(1111, 9999)
 
         connect()
-        from src.db import con
+        from db import con
 
         cursor = con.cursor()
 

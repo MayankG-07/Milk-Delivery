@@ -1,5 +1,5 @@
-from src.user import User
-from src.db import connect, disconnect
+from user import User
+from db import connect, disconnect
 from datetime import datetime
 
 
@@ -9,7 +9,7 @@ class Subscription:
 
     async def doesExist(self):
         connect()
-        from src.db import con
+        from db import con
 
         cursor = con.cursor()
 
@@ -35,7 +35,7 @@ class Subscription:
         self.auto_renew = 1 if auto_renew else 0
 
         connect()
-        from src.db import con
+        from db import con
 
         cursor = con.cursor()
 
@@ -81,7 +81,7 @@ class Subscription:
 
     async def noMilkNextDay(self):
         connect()
-        from src.db import con
+        from db import con
 
         cursor = con.cursor()
 
@@ -102,7 +102,7 @@ class Subscription:
         self.resume_date = resume_date
 
         connect()
-        from src.db import con
+        from db import con
 
         cursor = con.cursor()
 
@@ -163,7 +163,7 @@ class Subscription:
 
     async def deliver_milk_today(self):
         connect()
-        from src.db import con
+        from db import con
 
         cursor = con.cursor()
 

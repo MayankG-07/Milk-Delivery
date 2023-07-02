@@ -1,4 +1,4 @@
-from src.key import fernet
+from key import fernet
 
 
 class Password:

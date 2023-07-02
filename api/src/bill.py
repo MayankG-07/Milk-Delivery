@@ -1,5 +1,5 @@
-from src.user import User
-from src.db import connect, disconnect
+from user import User
+from db import connect, disconnect
 from datetime import datetime
 
 
@@ -12,7 +12,7 @@ class Bill:
         houseno = details["houseno"]
 
         connect()
-        from src.db import con
+        from db import con
 
         cursor = con.cursor()
 
@@ -79,7 +79,7 @@ class Bill:
 
     async def pay(self):
         connect()
-        from src.db import con
+        from db import con
 
         cursor = con.cursor()
 

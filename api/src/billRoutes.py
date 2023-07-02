@@ -1,6 +1,6 @@
-from src.app import app
-from src.user import User
-from src.bill import Bill
+from app import app
+from user import User
+from bill import Bill
 from pydantic import BaseModel
 
 

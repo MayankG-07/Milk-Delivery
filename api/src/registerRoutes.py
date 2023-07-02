@@ -1,6 +1,6 @@
-from src.app import app
+from app import app
 from pydantic import BaseModel
-from src.user import User
+from user import User
 
 
 class RegisterParams(BaseModel):
