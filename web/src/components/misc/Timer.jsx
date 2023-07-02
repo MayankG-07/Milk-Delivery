@@ -21,8 +21,5 @@ export const Timer = ({ expiryTimestamp, children }) => {
 
 Timer.propTypes = {
   expiryTimestamp: PropTypes.instanceOf(Date),
-  children: PropTypes.oneOfType([
-    PropTypes.arrayOf(PropTypes.node),
-    PropTypes.node,
-  ]),
+  children: PropTypes.func,
 };
