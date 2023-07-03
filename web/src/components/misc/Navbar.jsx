@@ -1,19 +1,22 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import AppBar from "@mui/material/AppBar";
-import Box from "@mui/material/Box";
-import CssBaseline from "@mui/material/CssBaseline";
-import Divider from "@mui/material/Divider";
-import Drawer from "@mui/material/Drawer";
-import IconButton from "@mui/material/IconButton";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
+import {
+  AppBar,
+  Box,
+  CssBaseline,
+  Divider,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Toolbar,
+  Button,
+  Typography,
+} from "@mui/material";
+
 import MenuIcon from "@mui/icons-material/Menu";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
 import { useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { UserContext } from "../../context/userContext";
@@ -31,6 +34,7 @@ export const Navbar = (props) => {
   const userContext = useContext(UserContext);
   const { userDetails, handleDetailsChange } = userContext;
   const loggedIn = Object.keys(userDetails).length !== 0;
+  const verified = loggedIn ? userDetails.verified : null;
 
   //   const handleNavigate = (item) => {
   //     navigate(paths[navItems.indexOf(item)]);
@@ -47,14 +51,44 @@ export const Navbar = (props) => {
       </Typography>
       <Divider />
       <List>
-        <ListItem disablePadding>
-          <ListItemButton
-            sx={{ textAlign: "center" }}
-            onClick={() => navigate("/home")}
-          >
-            <ListItemText primary="Home" />
-          </ListItemButton>
-        </ListItem>
+        {!loggedIn ? (
+          <ListItem disablePadding>
+            <ListItemButton
+              sx={{ textAlign: "center" }}
+              onClick={() => navigate("/home")}
+            >
+              <ListItemText primary="Home" />
+            </ListItemButton>
+          </ListItem>
+        ) : (
+          <></>
+        )}
+        {loggedIn ? (
+          <ListItem disablePadding>
+            <ListItemButton
+              sx={{ textAlign: "center" }}
+              onClick={() => navigate("/dashboard")}
+            >
+              <ListItemText primary="Dashboard" />
+            </ListItemButton>
+          </ListItem>
+        ) : (
+          <></>
+        )}
+
+        {loggedIn && !verified ? (
+          <ListItem disablePadding>
+            <ListItemButton
+              sx={{ textAlign: "center" }}
+              onClick={() => navigate("/verify")}
+            >
+              <ListItemText primary="Verify Email" />
+            </ListItemButton>
+          </ListItem>
+        ) : (
+          <></>
+        )}
+
         <ListItem disablePadding>
           <ListItemButton
             sx={{ textAlign: "center" }}
@@ -65,12 +99,27 @@ export const Navbar = (props) => {
                     navigate("/home");
                     location.reload();
                   }
-                : () => navigate("/login")
+                : () => {
+                    handleDetailsChange({});
+                    navigate("/login");
+                  }
             }
           >
             <ListItemText primary={loggedIn ? "Logout" : "Login"} />
           </ListItemButton>
         </ListItem>
+        {!loggedIn ? (
+          <ListItem disablePadding>
+            <ListItemButton
+              sx={{ textAlign: "center" }}
+              onClick={() => navigate("/register")}
+            >
+              <ListItemText primary="Register" />
+            </ListItemButton>
+          </ListItem>
+        ) : (
+          <></>
+        )}
       </List>
     </Box>
   );

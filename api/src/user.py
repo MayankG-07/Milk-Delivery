@@ -147,9 +147,7 @@ class User:
         cursor = con.cursor()
 
         try:
-            cursor.execute(
-                f"UPDATE users SET verified=1 WHERE wing='{self.wing}' AND houseno={self.houseno}"
-            )
+            cursor.execute(f"UPDATE users SET verified=1 WHERE houseno={self.houseno}")
         except Exception as e:
             disconnect()
             return {"error": e}

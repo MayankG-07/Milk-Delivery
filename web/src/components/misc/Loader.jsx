@@ -1,38 +1,21 @@
-import { forwardRef } from "react";
-
 import { PropTypes } from "prop-types";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  LinearProgress,
-  Slide,
-  Box,
-} from "@mui/material";
+import { LinearProgress, Box } from "@mui/material";
+import { AlertDialog } from "./AlertDialog";
 
 export const Loader = ({ loading }) => {
+  // console.log(loading);
   return (
-    <Dialog
+    <AlertDialog
       open={loading}
-      TransitionComponent={Transition}
-      keepMounted
-      aria-describedby="alert-dialog-slide-description"
-      fullWidth
-      maxWidth={"sm"}
-    >
-      <DialogTitle>{"Loading..."}</DialogTitle>
-      <DialogContent>
+      title="Loading..."
+      content={
         <Box>
           <LinearProgress />
         </Box>
-      </DialogContent>
-    </Dialog>
+      }
+    />
   );
 };
-
-const Transition = forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
 
 Loader.propTypes = {
   loading: PropTypes.bool.isRequired,

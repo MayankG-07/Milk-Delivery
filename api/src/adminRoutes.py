@@ -191,7 +191,7 @@ async def query(queryParams: QueryParams):
     except Exception as e:
         print(e)
         disconnect()
-        return {"error": "QUERY_ERROR", "message": e}
+        return {"error": "QUERY_ERROR", "message": str(e)}
 
     disconnect()
     return {"success": "QUERY_SUCCESS", "data": result}

@@ -13,10 +13,13 @@ import { UserContext } from "../../context/userContext";
 import axios from "axios";
 import { url } from "../../assets/res";
 import { Timer } from "../misc/Timer";
+import { useNavigate } from "react-router-dom";
+import { AlertDialog } from "../misc/AlertDialog";
 
 export const VerifyEmail = ({ justAfterRegister = false }) => {
   const userContext = useContext(UserContext);
-  const { userDetails } = userContext;
+  const { userDetails, handleDetailsChange } = userContext;
+  const navigate = useNavigate();
 
   if (Object.entries(userDetails).length === 0) {
     alert("Please login first");
@@ -32,6 +35,7 @@ export const VerifyEmail = ({ justAfterRegister = false }) => {
     time: null,
   });
   const [emailLoading, setEmailLoading] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleSendOtp = () => {
     setOtp((prevOtp) => ({ ...prevOtp, loading: true }));
@@ -107,6 +111,10 @@ export const VerifyEmail = ({ justAfterRegister = false }) => {
         setEmailLoading(false);
         if (res.data.success) {
           // TODO redirect after email verify code here
+          console.log("email verified");
+          setIsDialogOpen(true);
+          handleDetailsChange({ ...userDetails, verified: true });
+          // navigate("/dashboard")
           return;
         } else {
           alert("An error occurred");
@@ -123,99 +131,61 @@ export const VerifyEmail = ({ justAfterRegister = false }) => {
   };
 
   return (
-    <Box
-      sx={{
-        width: "inherit",
-        height: "inherit",
-      }}
-    >
-      {justAfterRegister ? (
-        <>
-          <Typography variant="h6" sx={{ marginY: 2 }}>
-            Thank you for joining us!
-          </Typography>
-          <Divider sx={{ marginBottom: 1.5 }} />
-        </>
-      ) : (
-        <></>
-      )}
-      <Typography variant="body1" sx={{ marginY: 1, alignContent: "center" }}>
-        {otp.sent ? <>OTP sent!</> : <>We will send an OTP to your email.</>}
-      </Typography>
-      {otp.sent ? (
-        <TextField
-          label="OTP"
-          value={!otp.value ? "" : otp.value}
-          onChange={(event) => {
-            if (!isNaN(parseInt(event.target.value))) {
-              setOtp((prevOtp) => ({ ...prevOtp, value: event.target.value }));
-            } else if (event.target.value === "") {
-              setOtp((prevOtp) => ({ ...prevOtp, value: "" }));
-            }
-          }}
-          sx={{ marginY: 1, width: justAfterRegister ? "87%" : "300px" }}
-        />
-      ) : (
-        <></>
-      )}
-      <Box sx={{ position: "relative" }}>
-        <Button
-          variant="contained"
-          sx={{ marginY: 1, width: justAfterRegister ? "87%" : "300px" }}
-          onClick={otp.sent ? handleVerifyEmail : handleSendOtp}
-          disabled={
-            otp.loading ||
-            emailLoading ||
-            (otp.sent && (otp.value < 1000 || otp.value > 9999))
-          }
-        >
-          {otp.sent ? <>Verify Email</> : <>Send OTP</>}
-        </Button>
-        {((otp.loading && !otp.sent) || emailLoading) && (
-          <CircularProgress
-            size={24}
-            sx={{
-              color: "primary",
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              marginTop: "-12px",
-              marginLeft: "-12px",
-            }}
-          />
+    <>
+      <Box
+        sx={{
+          marginTop: 20,
+          display: "flex",
+          alignItems: "center",
+          flexDirection: "column",
+        }}
+      >
+        {justAfterRegister ? (
+          <>
+            <Typography variant="h6" sx={{ marginY: 2 }}>
+              Thank you for joining us!
+            </Typography>
+            <Divider sx={{ marginBottom: 1.5 }} />
+          </>
+        ) : (
+          <></>
         )}
-      </Box>
-      {otp.sent ? (
+        <Typography variant="body1" sx={{ marginY: 1, alignContent: "center" }}>
+          {otp.sent ? <>OTP sent!</> : <>We will send an OTP to your email.</>}
+        </Typography>
+        {otp.sent ? (
+          <TextField
+            label="OTP"
+            value={!otp.value ? "" : otp.value}
+            onChange={(event) => {
+              if (!isNaN(parseInt(event.target.value))) {
+                setOtp((prevOtp) => ({
+                  ...prevOtp,
+                  value: event.target.value,
+                }));
+              } else if (event.target.value === "") {
+                setOtp((prevOtp) => ({ ...prevOtp, value: "" }));
+              }
+            }}
+            sx={{ marginY: 1, width: justAfterRegister ? "87%" : "300px" }}
+          />
+        ) : (
+          <></>
+        )}
         <Box sx={{ position: "relative" }}>
           <Button
-            variant="outlined"
-            sx={{ marginY: 0.15, width: justAfterRegister ? "87%" : "300px" }}
-            onClick={handleSendOtp}
-            disabled={!otp.sendAgain || emailLoading || otp.loading}
+            variant="contained"
+            sx={{ marginY: 1, width: justAfterRegister ? "87%" : "300px" }}
+            onClick={otp.sent ? handleVerifyEmail : handleSendOtp}
+            disabled={
+              otp.loading ||
+              emailLoading ||
+              (otp.sent && (otp.value < 1000 || otp.value > 9999))
+            }
           >
-            {otp.time ? (
-              <Timer expiryTimestamp={otp.time}>
-                {(minutes, seconds, isRunning) => {
-                  if (isRunning) {
-                    return (
-                      <>
-                        Send again in {minutes}:{seconds}
-                      </>
-                    );
-                  } else {
-                    setOtp((prevOtp) => ({
-                      ...prevOtp,
-                      sendAgain: true,
-                      time: null,
-                    }));
-                  }
-                }}
-              </Timer>
-            ) : (
-              <>Send again</>
-            )}
+            {otp.sent ? <>Verify Email</> : <>Send OTP</>}
           </Button>
-          {otp.loading && (
+          {((otp.loading && !otp.sent) || emailLoading) && (
             <CircularProgress
               size={24}
               sx={{
@@ -229,10 +199,68 @@ export const VerifyEmail = ({ justAfterRegister = false }) => {
             />
           )}
         </Box>
-      ) : (
-        <></>
-      )}
-    </Box>
+        {otp.sent ? (
+          <Box sx={{ position: "relative" }}>
+            <Button
+              variant="outlined"
+              sx={{ marginY: 0.15, width: justAfterRegister ? "87%" : "300px" }}
+              onClick={handleSendOtp}
+              disabled={!otp.sendAgain || emailLoading || otp.loading}
+            >
+              {otp.time ? (
+                <Timer expiryTimestamp={otp.time}>
+                  {(minutes, seconds, isRunning) => {
+                    if (isRunning) {
+                      return (
+                        <>
+                          Send again in {minutes}:{seconds}
+                        </>
+                      );
+                    } else {
+                      setOtp((prevOtp) => ({
+                        ...prevOtp,
+                        sendAgain: true,
+                        time: null,
+                      }));
+                    }
+                  }}
+                </Timer>
+              ) : (
+                <>Send again</>
+              )}
+            </Button>
+            {otp.loading && (
+              <CircularProgress
+                size={24}
+                sx={{
+                  color: "primary",
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  marginTop: "-12px",
+                  marginLeft: "-12px",
+                }}
+              />
+            )}
+          </Box>
+        ) : (
+          <></>
+        )}
+      </Box>
+      <AlertDialog
+        open={isDialogOpen}
+        title="Email Verified"
+        content="Your email has been verified successfully"
+        showActions={true}
+        actions={[
+          {
+            text: "OK",
+            onclick: "closeDialog",
+          },
+        ]}
+        onClose={() => navigate("/dashboard")}
+      />
+    </>
   );
 };
 

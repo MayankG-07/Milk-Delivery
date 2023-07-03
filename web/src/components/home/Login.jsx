@@ -161,10 +161,33 @@ export const Login = ({ boxStyles }) => {
       });
   };
 
-  const login = () => {
+  const login = async () => {
     // TODO login redirect code goes here
     // console.log(details.wing, details.houseno);
-    handleDetailsChange({ wing: details.wing, houseno: details.houseno });
+
+    await axios
+      .put(`${url}/admin/query`, {
+        query: `SELECT verified FROM users WHERE wing='${details.wing}' AND houseno=${details.houseno}`,
+      })
+      .then((res) => {
+        if (res.data.success) {
+          const verified = res.data.data[0][0];
+          handleDetailsChange({
+            wing: details.wing,
+            houseno: details.houseno,
+            verified: verified == 1 ? true : false,
+          });
+        } else {
+          alert("An error occurred");
+          console.log(res.data.error, res.data.message);
+        }
+      })
+      .catch((err) => {
+        alert("An error occurred");
+        console.log(err);
+      });
+
+    // handleDetailsChange({ wing: details.wing, houseno: details.houseno });
     navigate("/dashboard");
   };
 

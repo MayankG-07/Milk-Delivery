@@ -2,18 +2,15 @@ import axios from "axios";
 import { images, milk_types, url } from "../../assets/res";
 import { useEffect, useState } from "react";
 import {
-  Box,
   Divider,
   Typography,
   Card,
   CardHeader,
-  // CardMedia,
   CardContent,
   CardActions,
   Collapse,
   Avatar,
   IconButton,
-  Button,
   Popover,
   List,
   ListItem,
@@ -29,7 +26,6 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 // import { red } from "@mui/material/colors";
 import { styled } from "@mui/material/styles";
 import { PropTypes } from "prop-types";
-import { Loader } from "../misc/Loader";
 
 export const Sub = ({
   subid,
@@ -37,6 +33,7 @@ export const Sub = ({
   start,
   current = false,
   isFav = false,
+  children,
 }) => {
   const [subDetails, setSubDetails] = useState({
     sub_start: start,
@@ -130,7 +127,7 @@ export const Sub = ({
 
   return (
     <>
-      <Loader loading={loading} />
+      <>{children(loading)}</>
       {current && !loading ? (
         <Card sx={{ maxWidth: 345 }}>
           <CardHeader
@@ -237,4 +234,5 @@ Sub.propTypes = {
   start: PropTypes.instanceOf(Date),
   current: PropTypes.bool,
   isFav: PropTypes.bool,
+  children: PropTypes.func,
 };

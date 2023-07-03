@@ -43,5 +43,5 @@ async def verify_email(verifyEmailParams: VerifyEmailParams):
     houseno = params_dict["houseno"]
 
     user = User(wing, houseno)
-    message = user.verify_email()
+    message = await user.verify_email()
     return message
