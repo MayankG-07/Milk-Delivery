@@ -97,7 +97,7 @@ export const Navbar = (props) => {
                 ? () => {
                     handleDetailsChange({});
                     navigate("/home");
-                    location.reload();
+                    window.location.reload();
                   }
                 : () => {
                     handleDetailsChange({});
@@ -167,7 +167,7 @@ export const Navbar = (props) => {
                   ? () => {
                       handleDetailsChange({});
                       navigate("/home");
-                      location.reload();
+                      window.location.reload();
                     }
                   : () => navigate("/login")
               }

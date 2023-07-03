@@ -46,7 +46,7 @@ export const AlertDialog = ({
             <Button
               key={item.text}
               onClick={
-                item.onclick == "closeDialog"
+                item.onclick === "closeDialog"
                   ? () => {
                       console.log("clicked");
                       dialogOpen = false;

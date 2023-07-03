@@ -175,7 +175,7 @@ export const Login = ({ boxStyles }) => {
           handleDetailsChange({
             wing: details.wing,
             houseno: details.houseno,
-            verified: verified == 1 ? true : false,
+            verified: verified === 1 ? true : false,
           });
         } else {
           alert("An error occurred");
