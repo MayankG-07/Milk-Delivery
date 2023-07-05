@@ -18,18 +18,14 @@ async def root():
 
 import bill
 import db
-import delivery
 import email_config
-import key
 import otp
-import password
+import utils
 import sub
 import user
+import house
 
-import adminRoutes
-import billRoutes
-import get_otpRoutes
-import loginRoutes
 import miscRoutes
-import registerRoutes
 import subRoutes
+import houseRoutes
+import userRoutes

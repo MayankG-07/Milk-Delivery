@@ -1,87 +1,37 @@
 from app import app
-from user import User
 from sub import Subscription
-from pydantic import BaseModel
-from typing import Optional
+from house import House
+from misc import dateFromString
+from params import NewSubParams, PauseSubParams
 
 
-class SubscribeParams(BaseModel):
-    wing: str
-    houseno: int
-    sub_type: str
-    milk_comp: str
-    milk_type: str
-    start_date: str
-    auto_renew: bool
-    omit: Optional[list[int]] = None
+# * inline with new schema
+@app.post("/sub/new", summary="Create new subscription", status_code=201)
+async def subscribe(params: NewSubParams):
+    houseid = params.houseid
+    milkids = params.milkids
+    sub_start = dateFromString(params.sub_start)
+    sub_end = dateFromString(params.sub_end)
+    days = params.days
 
-
-class NoMilkNextDayParams(BaseModel):
-    wing: str
-    houseno: int
-
-
-class PauseSubParams(BaseModel):
-    wing: str
-    houseno: int
-    pause_date: str
-    resume_date: str
-
-
-@app.post("/api/sub/new")
-async def subscribe(subscribeParams: SubscribeParams):
-    params_dict = subscribeParams.dict()
-    wing = params_dict["wing"]
-    houseno = params_dict["houseno"]
-    sub_type = params_dict["sub_type"]
-    milk_comp = params_dict["milk_comp"]
-    milk_type = params_dict["milk_type"]
-    start_date = params_dict["start_date"]
-    auto_renew = params_dict["auto_renew"]
-    try:
-        omit = params_dict["omit"]
-    except:
-        omit = None
-
-    user = User(wing, houseno)
-    sub = Subscription(user)
-    if await sub.doesExist():
-        return {"error": "SUB_EXISTS"}
-
-    message = await sub.activate(
-        sub_type, milk_comp, milk_type, start_date, auto_renew, omit
+    house = House(houseid=houseid)
+    await house.sync_details()
+    sub = Subscription(
+        house=house, milkids=milkids, sub_start=sub_start, sub_end=sub_end, days=days
     )
-    return message
+
+    details = await sub.activate()
+    return details
 
 
-@app.patch("/api/sub/no_milk_next_day")
-async def no_milk_next_day(noMilkNextDayParams: NoMilkNextDayParams):
-    params_dict = noMilkNextDayParams.dict()
-    wing = params_dict["wing"]
-    houseno = params_dict["houseno"]
+# * inline with new schema
+@app.put("/sub/{subid}/pause", summary="Pause subscription", status_code=200)
+async def pause_sub(subid: int, params: PauseSubParams):
+    pause_date = dateFromString(params.pause_date)
+    resume_date = dateFromString(params.resume_date)
 
-    user = User(wing, houseno)
-    sub = Subscription(user)
-    if not await sub.doesExist():
-        return {"error": "SUB_NOT_EXISTS"}
+    sub = Subscription(subid=subid)
+    await sub.sync_details()
 
-    message = await sub.noMilkNextDay()
-    return message
-
-
-@app.patch("/api/sub/pause")
-async def pause_sub(pauseSubParams: PauseSubParams):
-    params_dict = pauseSubParams.dict()
-    wing = params_dict["wing"]
-    houseno = params_dict["houseno"]
-    pause_date = params_dict["pause_date"]
-    resume_date = params_dict["resume_date"]
-
-    user = User(wing, houseno)
-    sub = Subscription(user)
-
-    if not await sub.doesExist():
-        return {"error": "SUB_NOT_EXISTS"}
-
-    message = await sub.pause(pause_date, resume_date)
-    return message
+    details = await sub.pause(pause_date, resume_date)
+    return details

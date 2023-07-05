@@ -1,200 +1,188 @@
-from password import Password
+from utils import Password, create_access_token, create_refresh_token
 from db import connect, disconnect
+from fastapi import HTTPException
 
 
 class User:
     def __init__(
         self,
-        wing: str,
-        houseno: int,
+        userid: int = None,
         email: str = None,
+        name: str = None,
+        phone: str = None,
         password: str = None,
-        otp: int = None,
+        imgUrl: str = None,
+        houseids: list[int] | None = None,
+        verified: int = 0,
+        otp: int | None = None,
     ):
-        self.wing = wing
-        self.houseno = houseno
+        self.userid = userid
         self.email = email
-        self.password = Password(password)
-        self.otp = otp
+        self.name = name
+        self.phone = phone
+        self.password = Password(value=password) if password is not None else None
+        self.imgUrl = imgUrl
+        self.houseids = houseids
+        self.verified = verified
+        self.otp = Password(value=str(otp)) if otp is not None else None
 
+    # * inline with new schema
+    async def sync_details(self):
+        connect()
+        from db import con
+
+        cursor = con.cursor()
+
+        query = (
+            f"SELECT * FROM users WHERE userid={self.userid}"
+            if self.userid is not None
+            else f"SELECT * FROM users WHERE email='{self.email}'"
+        )
+
+        cursor.execute(query)
+
+        try:
+            result = cursor.fetchall()
+            row = result[0]
+        except IndexError:
+            disconnect()
+            raise HTTPException(status_code=404, detail="User not found")
+
+        disconnect()
+
+        self.userid = row[0]
+        self.name = row[1]
+        self.email = row[2]
+        self.phone = row[3]
+        self.imgUrl = row[5]
+        self.houseids = eval(row[6]) if row[6] is not None else None
+        self.verified = row[7]
+
+    # * inline with new schema
     async def register(self):
         connect()
         from db import con
 
         cursor = con.cursor()
 
-        cursor.execute(f"SELECT * FROM users WHERE houseno={self.houseno}")
-        result = cursor.fetchall()
-        if result:
-            disconnect()
-            return {"error": "DUPLICATE_HOUSENO"}
+        cursor.execute(f"SELECT * FROM users WHERE email='{self.email}'")
+        try:
+            result = cursor.fetchall()
+            row = result[0]
+            raise HTTPException(
+                status_code=400, detail="User with email already exists"
+            )
+        except IndexError:
+            pass
+
+        cursor.execute(f"SELECT * FROM users WHERE phone='{self.phone}'")
+        try:
+            result = cursor.fetchall()
+            row = result[0]
+            raise HTTPException(
+                status_code=400, detail="User with phone already exists"
+            )
+        except IndexError:
+            pass
+
+        self.password.get_hash()
+        query = (
+            f"INSERT INTO users (name, email, phone, password, imgUrl, verified) VALUES ('{self.name}', '{self.email}', '{self.phone}', '{self.password.hashed}', '{self.imgUrl}', 0)"
+            if self.imgUrl is not None
+            else f"INSERT INTO users (name, email, phone, password, verified) VALUES ('{self.name}', '{self.email}', '{self.phone}', '{self.password.hashed}', 0)"
+        )
+        cursor.execute(query)
+        con.commit()
 
         cursor.execute(f"SELECT * FROM users WHERE email='{self.email}'")
         result = cursor.fetchall()
-        if result:
-            disconnect()
-            return {"error": "DUPLICATE_EMAIL"}
+        row = result[0]
+        details = {
+            "userid": row[0],
+            "name": row[1],
+            "email": row[2],
+            "phone": row[3],
+            "imgUrl": row[5],
+            "houseids": eval(row[6]) if row[6] is not None else None,
+            "verified": bool(row[7]),
+        }
 
-        try:
-            cursor.execute(f"SELECT max(id) FROM users")
-            prev_id = cursor.fetchall()[0][0]
-            print(prev_id, type(prev_id))
-            if (not prev_id) and (not prev_id == 0):
-                current_id = 0
-            else:
-                current_id = int(prev_id) + 1
-            self.password.encrypt()
-            encrypted_pwd = self.password.value
+        disconnect()
+        return details
 
-            cursor.execute(
-                f"INSERT INTO users (id, wing, houseno, email, password) VALUES ({current_id}, '{self.wing}', '{self.houseno}', '{self.email}', '{encrypted_pwd}')"
-            )
-
-            cursor.execute(
-                f"CREATE TABLE {self.wing}{self.houseno} (subid INT, milkid INT, sub_start DATE, omit_days JSON, auto_renew TINYINT, pause_dates JSON, resume_dates JSON, milk_delivered JSON, could_not_deliver JSON, bills_due JSON, bills_paid JSON)"
-            )
-
-            con.commit()
-
-            cursor.execute(f"SELECT * FROM users WHERE id={current_id}")
-            result = cursor.fetchall()
-
-            disconnect()
-            if not result:
-                return {"error": "SERVER_ERROR"}
-
-            return {"success": "REGISTER_SUCCESS"}
-
-        except Exception as e:
-            return {"error": str(e)}
-
+    # * inline with new schema
     async def loginPassword(self):
         connect()
         from db import con
 
         cursor = con.cursor()
 
-        cursor.execute(
-            f"SELECT password FROM users WHERE wing='{self.wing}' AND houseno={self.houseno}"
-        )
+        cursor.execute(f"SELECT password FROM users WHERE userid='{self.userid}'")
+        result = cursor.fetchall()
+        req_pwd = result[0][0]
 
-        try:
-            result = cursor.fetchall()[0][0]
-        except IndexError:
-            disconnect()
-            return {"error": "INVALID_CREDS"}
-        except Exception as e:
-            disconnect()
-            return {"error": e}
-
-        req_pwd = Password(result)
-        req_pwd.decrypt()
+        self.password.hashed = req_pwd
         disconnect()
-        return (
-            {"success": "LOGIN_SUCCESS"}
-            if self.password.value == req_pwd.value
-            else {"error": "INVALID_CREDS"}
-        )
+        if not self.password.verify_password():
+            raise HTTPException(status_code=400, detail="Incorrect email or password")
 
+        return {
+            "access_token": create_access_token(str(self.userid)),
+            "refresh_token": create_refresh_token(str(self.userid)),
+        }
+
+    # * inline with new schema
     async def loginOtp(self):
         connect()
         from db import con
 
         cursor = con.cursor()
 
-        cursor.execute(
-            f"SELECT otp, otpGenTime FROM users WHERE houseno={self.houseno}"
-        )
-        result = cursor.fetchall()[0]
-        print(result)
-        if not result:
+        cursor.execute(f"SELECT otp, otpGenTime FROM users WHERE userid={self.userid}")
+        result = cursor.fetchall()
+        try:
+            row = result[0]
+            req_otp, otpGenTime = row[0], row[1]
+        except IndexError:
             disconnect()
-            return {"error": "INVALID_CREDS"}
-
-        req_otp, otpGenTime = result
+            raise HTTPException(status_code=400, detail="Invalid OTP")
 
         cursor.execute(
-            f"SELECT houseno FROM users WHERE DATE_ADD(otpGenTime, INTERVAL 10 MINUTE) >= NOW() AND otp={req_otp}"
+            f"SELECT otp FROM users WHERE DATE_ADD(otpGenTime, INTERVAL 10 MINUTE) >= NOW()"
         )
 
         try:
-            result = cursor.fetchall()[0][0]
-        except Exception as e:
-            print(e)
+            result = cursor.fetchall()
+            row = result[0]
+            req_otp = row[0]
+            self.otp.hashed = req_otp
+        except IndexError:
             disconnect()
-            return {"error": "INVALID_OTP"}
+            raise HTTPException(status_code=400, detail="Invalid OTP")
 
-        if (not result) or (not (result == self.houseno)):
+        if not self.otp.verify_password():
             disconnect()
-            return {"error": "INVALID_CREDS"}
-
-        if not self.otp == req_otp:
-            disconnect()
-            return {"error": "INVALID_OTP"}
+            raise HTTPException(status_code=400, detail="Invalid OTP")
 
         cursor.execute(
-            f"UPDATE users SET otp = NULL, otpGenTime = NULL WHERE houseno={self.houseno}"
+            f"UPDATE users SET otp = NULL, otpGenTime = NULL WHERE userid={self.userid}"
         )
         con.commit()
 
         disconnect()
-        return {"success": "LOGIN_SUCCESS"}
+        return {
+            "access_token": create_access_token(str(self.userid)),
+            "refresh_token": create_refresh_token(str(self.userid)),
+        }
 
+    # * inline with new schema
     async def verify_email(self):
         connect()
         from db import con
 
         cursor = con.cursor()
 
-        try:
-            cursor.execute(f"UPDATE users SET verified=1 WHERE houseno={self.houseno}")
-        except Exception as e:
-            disconnect()
-            return {"error": e}
+        cursor.execute(f"UPDATE users SET verified=1 WHERE userid={self.userid}")
 
         con.commit()
         disconnect()
-        return {"success": "EMAIL_VERIFY_SUCCESS"}
-
-    async def get_details(self):
-        connect()
-        from db import con
-
-        cursor = con.cursor()
-
-        cursor.execute(f"SELECT * FROM users WHERE houseno={self.houseno}")
-        result = cursor.fetchall()[0]
-
-        if not result:
-            disconnect()
-            return {"error": "INVALID_CREDS"}
-
-        wing, houseno, email = result[1:4]
-
-        cursor.execute(f"SELECT * FROM {wing}{self.houseno}")
-        result = cursor.fetchall()
-
-        subs = [
-            {
-                "id": result.index(row) + 1,
-                "sub": {
-                    "subid": row[0],
-                    "milkid": row[1],
-                    "sub_start": row[2],
-                    "omit_days": row[3],
-                    "auto_renew": row[4],
-                    "pause_dates": eval(row[5]) if row[5] is not None else [],
-                    "resume_dates": eval(row[6]) if row[6] is not None else [],
-                    "milk_delivered": eval(row[7]) if row[7] is not None else [],
-                    "could_not_deliver": eval(row[8]) if row[8] is not None else [],
-                    "bills_due": eval(row[9]) if row[9] is not None else [],
-                    "bills_paid": eval(row[10]) if row[10] is not None else [],
-                },
-            }
-            for row in result
-        ]
-
-        details = {"wing": wing, "houseno": houseno, "email": email, "subs": subs}
-
-        disconnect()
-        return {"success": "DETAILS_FETCH_SUCCESS", "details": details}

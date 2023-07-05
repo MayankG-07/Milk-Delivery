@@ -1,35 +1,28 @@
 from random import randrange
 from db import connect, disconnect
 from email_config import Email
+from utils import Password
+from user import User
 
 
+# * inline with new schema
 class OTP:
-    def __init__(self, email: str):
-        self.email = email
-        self.value = randrange(1111, 9999)
+    def __init__(self, user: User):
+        self.user = user
+        self.value = Password(value=str(randrange(1111, 9999)))
+        self.value.get_hash()
 
         connect()
         from db import con
 
         cursor = con.cursor()
 
-        while True:
-            try:
-                cursor.execute(f"SELECT houseno FROM users WHERE otp={self.value}")
-                temp_otp = cursor.fetchall()[0][0]
-                self.value = randrange(1111, 9999)
-            except:
-                break
-
-        # cursor.execute(f"SELECT otp FROM users WHERE email='{self.email}'")
-        # prev_otp = cursor.fetchall()[0][0]
-        # if prev_otp:
-        #     prev_otp = int(prev_otp)
-        #     while self.value == prev_otp:
-        #         self.value = randrange(1111, 9999)
-
-        cursor.execute(f"UPDATE users SET otp={self.value} WHERE email='{self.email}'")
-        cursor.execute(f"UPDATE users SET otpGenTime=NOW() WHERE email='{self.email}'")
+        cursor.execute(
+            f"UPDATE users SET otp='{self.value.hashed}' WHERE userid={self.user.userid}"
+        )
+        cursor.execute(
+            f"UPDATE users SET otpGenTime=NOW() WHERE userid={self.user.userid}"
+        )
 
         con.commit()
         disconnect()
@@ -50,7 +43,7 @@ class OTP:
 
         with open(r"./../assets/otp.txt", "r") as f:
             body = f.read()
-            email_body = body.format(self.value)
+            email_body = body.format(self.value.value)
 
         # email_html = """<!DOCTYPE html>
         #                 <html lang="en">
@@ -91,17 +84,13 @@ class OTP:
 
         with open(r"./../assets/otp.html", "r") as f:
             html = f.read()
-            email_html = html.format(self.value)
+            email_html = html.format(self.value.value)
 
         new_otp_email = Email(
-            to=self.email,
+            to=self.user.email,
             subject="OTP Requested at Patel Kirana Store",
             body=email_body,
             html=email_html,
         )
 
-        try:
-            await new_otp_email.send()
-            return {"success": "OTP_SENT_SUCCESS", "data": {"otp": self.value}}
-        except Exception as e:
-            return {"error": e}
+        await new_otp_email.send()

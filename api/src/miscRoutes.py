@@ -1,47 +1,82 @@
 from app import app
 from db import connect, disconnect
-from user import User
-from pydantic import BaseModel
+from fastapi import HTTPException
+from misc import dateFromInt, dateFromString
+from datetime import timedelta
 
 
-class MilkOnlyNextDayParams(BaseModel):
-    houseno: int
-
-
-class VerifyEmailParams(BaseModel):
-    wing: str
-    houseno: int
-
-
-@app.put("/api/milk_only_next_day")
-async def milk_only_next_day(milkOnlyNextDayParams: MilkOnlyNextDayParams):
+# * in line with new schema
+@app.get(
+    "/misc/tomorrow-delivery",
+    summary="View list of houses to deliver to tomorrow",
+    status_code=200,
+)
+async def get_next_day_delivery_details(clientDate: str):
     connect()
-    params_dict = milkOnlyNextDayParams.dict()
-    houseno = params_dict["houseno"]
-
     from db import con
 
     cursor = con.cursor()
 
-    cursor.execute(f"UPDATE users SET milk_next_day=1 WHERE houseno={houseno}")
-    con.commit()
+    clientNextDate = dateFromString(clientDate) + timedelta(days=1)
+    nextDay = clientNextDate.weekday()
 
-    cursor.execute(f"SELECT milk_next_day FROM users WHERE houseno={houseno}")
-    result = cursor.fetchall()[0][0]
+    cursor.execute(f"SELECT * FROM subs WHERE active=1")
+    result = cursor.fetchall()
+    details = [
+        {
+            "subid": row[0],
+            "milkids": eval(row[1]),
+            "sub_start": row[2],
+            "days": eval(row[3]),
+            "sub_end": row[4],
+            "pause_date": row[5],
+            "resume_date": row[6],
+            "delivered": [dateFromInt(date) for date in eval(row[7])]
+            if row[7] is not None
+            else [],
+            "not_delivered": [dateFromInt(date) for date in eval(row[8])]
+            if row[8] is not None
+            else [],
+            "active": bool(row[9]),
+            "houseid": row[10],
+        }
+        for row in result
+    ]
 
-    if not result:
-        disconnect()
-        return {"error": "An error occurred"}
+    final_details = [
+        {"houseid": item["houseid"], "milkids": item["milkids"]}
+        for item in details
+        if (nextDay in item["days"])
+        and (
+            not (
+                (clientNextDate > item["pause_date"])
+                and (clientNextDate < item["resume_date"])
+            )
+            if ((item["pause_date"] is not None) and (item["resume_date"] is not None))
+            else True
+        )
+    ]
+
     disconnect()
-    return {"success": "MILK_NEXT_DAY"}
+    return final_details
 
 
-@app.patch("/api/verify_email")
-async def verify_email(verifyEmailParams: VerifyEmailParams):
-    params_dict = verifyEmailParams.dict()
-    wing = params_dict["wing"]
-    houseno = params_dict["houseno"]
+# * inline with new schema
+@app.put("/misc/sql-query", summary="Perform SQL query on database", status_code=200)
+async def query(query: str):
+    connect()
+    from db import con
 
-    user = User(wing, houseno)
-    message = await user.verify_email()
-    return message
+    cursor = con.cursor()
+
+    try:
+        cursor.execute(query)
+        result = [list(row) for row in cursor.fetchall()]
+    except Exception as e:
+        disconnect()
+        raise HTTPException(
+            status_code=400, detail={"message": "Invalid query", "error": str(e)}
+        )
+
+    disconnect()
+    return {"data": result}

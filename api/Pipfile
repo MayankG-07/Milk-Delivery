@@ -7,6 +7,9 @@ name = "pypi"
 fastapi = {extras = ["all"], version = "*"}
 mysql-connector-python = "*"
 cryptography = "*"
+python-jose = {extras = ["cryptography"], version = "*"}
+passlib = {extras = ["bcrypt"], version = "*"}
+python-multipart = "*"
 
 [dev-packages]
 

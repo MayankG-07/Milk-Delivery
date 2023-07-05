@@ -10,6 +10,7 @@ import { Dashboard } from "./components/dashboard/Dashboard";
 import { Navbar } from "./components/misc/Navbar";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { VerifyEmail } from "./components/home/VerifyEmail";
+import { QueryClientProvider, QueryClient } from "react-query";
 
 const darkTheme = createTheme({
   palette: {
@@ -17,23 +18,27 @@ const darkTheme = createTheme({
   },
 });
 
+const queryClient = new QueryClient();
+
 const App = () => {
   // const userContext = useContext(UserContext);
   // const { userDetails } = userContext;
   return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline />
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="home" element={<Home />} />
-        <Route path="login" element={<Login />} />
-        <Route path="register" element={<Register />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="verify" element={<VerifyEmail />} />
-        <Route path="*" element={<NotFound404 />} />
-      </Routes>
-    </ThemeProvider>
+    <QueryClientProvider queryClient={queryClient}>
+      <ThemeProvider theme={darkTheme}>
+        <CssBaseline />
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="home" element={<Home />} />
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="verify" element={<VerifyEmail />} />
+          <Route path="*" element={<NotFound404 />} />
+        </Routes>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 };
 

@@ -1,214 +1,183 @@
 from user import User
 from db import connect, disconnect
 from datetime import datetime
+from fastapi import HTTPException
+from house import House
+from misc import sqlfyJSON, dateFromInt, intFromDate
 
 
 class Subscription:
-    def __init__(self, user: User):
-        self.user = user
-
-    async def doesExist(self):
-        connect()
-        from db import con
-
-        cursor = con.cursor()
-
-        cursor.execute(f"SELECT subid FROM users WHERE houseno={self.user.houseno}")
-
-        result = cursor.fetchall()[0][0]
-        disconnect()
-        return True if result is not None else False
-
-    async def activate(
+    def __init__(
         self,
-        sub_type: str,
-        milk_comp: str,
-        milk_type: str,
-        start_date: str,
-        auto_renew: bool,
-        omit: list[int] = None,
+        subid: int | None = None,
+        house: House | None = None,
+        milkids: list[int] | None = None,
+        sub_start: datetime | None = None,
+        sub_end: datetime | None = None,
+        days: list[int] | None = None,
     ):
-        self.sub_type = sub_type
-        self.milk_comp = milk_comp
-        self.milk_type = milk_type
-        self.omit = omit
-        self.auto_renew = 1 if auto_renew else 0
+        self.house = house
+        self.subid = subid
+        self.milkids = milkids
+        self.sub_start = sub_start
+        self.sub_end = sub_end
+        self.days = days
 
+    # * inline with new schema
+    async def sync_details(self):
         connect()
         from db import con
 
         cursor = con.cursor()
 
-        cursor.execute(f"SELECT subid FROM subs WHERE type='{self.sub_type}'")
-        subid = int(cursor.fetchall()[0][0])
-
-        cursor.execute(
-            f"SELECT milkid FROM milks WHERE company='{self.milk_comp}' AND type='{self.milk_type}'"
+        query = (
+            f"SELECT * FROM subs WHERE subid={self.subid}"
+            if self.subid
+            else f"SELECT * FROM subs WHERE houseid={self.house.houseid}"
         )
-        milkid = int(cursor.fetchall()[0][0])
+        cursor.execute(query)
 
         try:
-            if self.omit:
-                cursor.execute(
-                    f"UPDATE users SET subid={subid}, milkid={milkid}, sub_start='{start_date}', omit_days='{self.omit}', auto_renew={self.auto_renew}, milk_next_day=1 WHERE houseno={self.user.houseno}"
-                )
+            result = cursor.fetchall()
+            row = result[0]
+            self.subid = row[0]
+            self.milkids = eval(row[1])
+            self.sub_start = row[2]
+            self.days = eval(row[3])
+            self.sub_end = row[4]
+            self.pause_date = row[5]
+            self.resume_date = row[6]
+            self.delivered = (
+                [dateFromInt(date) for date in eval(row[7])]
+                if row[7] is not None
+                else []
+            )
+            self.not_delivered = (
+                [dateFromInt(date) for date in eval(row[8])]
+                if row[8] is not None
+                else []
+            )
+            self.active = bool(row[9])
+            self.house = House(houseid=row[10])
+            await self.house.sync_details()
+        except IndexError:
+            disconnect()
+            raise HTTPException(status_code=404, detail="Sub not found")
 
-                cursor.execute(
-                    f"INSERT INTO {self.user.wing}{self.user.houseno} (subid, milkid, sub_start, omit_days, auto_renew) VALUES ({subid}, {milkid}, '{start_date}', '{self.omit}', {self.auto_renew}) "
-                )
-            else:
-                cursor.execute(
-                    f"UPDATE users SET subid={subid}, milkid={milkid}, sub_start='{start_date}', auto_renew={self.auto_renew}, milk_next_day=1 WHERE houseno={self.user.houseno}"
-                )
+    # * inline with new schema
+    async def could_not_deliver(self, clientDate: datetime):
+        connect()
+        from db import con
 
-                cursor.execute(
-                    f"INSERT INTO {self.user.wing}{self.user.houseno} (subid, milkid, sub_start, auto_renew) VALUES ({subid}, {milkid}, '{start_date}', {self.auto_renew}) "
-                )
+        cursor = con.cursor()
 
-            con.commit()
+        query = f"SELECT not_delivered FROM subs WHERE subid={self.subid}"
+        cursor.execute(query)
 
-            cursor.execute(f"SELECT subid FROM users WHERE houseno={self.user.houseno}")
+        try:
             result = cursor.fetchall()[0][0]
-            if result is not None:
-                disconnect()
-                return {"success": "SUB_ACTIVATE_SUCCESS"}
-            else:
-                disconnect()
-                return {"error": "An error occurred"}
-        except Exception as e:
-            disconnect()
-            return {"error": e}
-
-    async def noMilkNextDay(self):
-        connect()
-        from db import con
-
-        cursor = con.cursor()
-
-        try:
-            cursor.execute(
-                f"UPDATE users SET milk_next_day=0 WHERE houseno={self.user.houseno}"
-            )
-
-            con.commit()
-            disconnect()
-            return {"success": "NO_MILK_NEXT_DAY"}
-        except Exception as e:
-            disconnect()
-            return {"error": e}
-
-    async def pause(self, pause_date: str, resume_date: str):
-        self.pause_date = pause_date
-        self.resume_date = resume_date
-
-        connect()
-        from db import con
-
-        cursor = con.cursor()
-
-        cursor.execute(
-            f"SELECT DATE_ADD(sub_start, INTERVAL 1 MONTH) FROM users WHERE houseno={self.user.houseno}"
-        )
-        sub_end = cursor.fetchall()[0][0]
-
-        pause_start = datetime(
-            int(pause_date[:4]), int(pause_date[5:7]), int(pause_date[8:])
-        ).date()
-
-        if pause_start >= sub_end:
-            disconnect()
-            return {"error": "SUB_NOT_EXISTS"}
-
-        cursor.execute(
-            f"UPDATE users SET pause_date='{self.pause_date}', resume_date='{self.resume_date}' WHERE houseno={self.user.houseno}"
-        )
-
-        cursor.execute(f"SELECT sub_start FROM users WHERE houseno={self.user.houseno}")
-        start_date = cursor.fetchall()[0][0]
-
-        cursor.execute(
-            f"SELECT pause_dates, resume_dates FROM {self.user.wing}{self.user.houseno} WHERE sub_start='{start_date}'"
-        )
-
-        try:
-            pause_dates, resume_dates = cursor.fetchall()[0]
-            pause_dates = eval(pause_dates)
-            resume_dates = eval(resume_dates)
-
-            pause_dates.append(int(pause_date[:4] + pause_date[5:7] + pause_date[8:]))
-            resume_dates.append(
-                int(resume_date[:4] + resume_date[5:7] + resume_date[8:])
-            )
+            not_delivered = eval(result)
         except:
-            pause_dates = [int(pause_date[:4] + pause_date[5:7] + pause_date[8:])]
-            resume_dates = [int(resume_date[:4] + resume_date[5:7] + resume_date[8:])]
+            not_delivered = []
 
-        cursor.execute(
-            f"UPDATE {self.user.wing}{self.user.houseno} SET pause_dates='{pause_dates}', resume_dates='{resume_dates}'"
-        )
+        clientDateInt = intFromDate(clientDate)
+        not_delivered.append(clientDateInt)
+
+        query = f"UPDATE subs SET not_delivered={sqlfyJSON(not_delivered)} WHERE subid={self.subid}"
+        cursor.execute(query)
 
         con.commit()
-
-        cursor.execute(
-            f"SELECT pause_date FROM users WHERE houseno={self.user.houseno}"
-        )
-        result = cursor.fetchall()[0][0]
-
-        if not result:
-            disconnect()
-            return {"error": "An error occurred"}
-
         disconnect()
-        return {"success": "SUB_PAUSE_SUCCESS"}
 
-    async def deliver_milk_today(self):
+    # * inline with new schema
+    async def activate(self):
         connect()
         from db import con
 
         cursor = con.cursor()
 
-        cursor.execute(
-            f"SELECT milk_delivered FROM users WHERE houseno={self.user.houseno}"
-        )
-
-        result = cursor.fetchall()[0][0]
+        query = f"SELECT * FROM subs WHERE houseid={self.house.houseid}"
+        cursor.execute(query)
 
         try:
-            try:
-                milk_delivered = eval(result)
-            except:
-                milk_delivered = []
-
-            date = str(datetime.now().date())
-            date = int(date[:4] + date[5:7] + date[8:])
-
-            milk_delivered.append(date)
-
-            cursor.execute(
-                f"UPDATE users SET milk_delivered='{milk_delivered}' WHERE houseno='{self.user.houseno}'"
+            result = cursor.fetchall()
+            row = result[0]
+            raise HTTPException(
+                status_code=400, detail="Subscription already exists for house"
             )
+        except IndexError:
+            pass
 
-            cursor.execute(
-                f"SELECT sub_start FROM users WHERE houseno={self.user.houseno}"
-            )
-            start_date = cursor.fetchall()[0][0]
+        query = f"INSERT INTO subs (milkids, sub_start, days, sub_end, active, houseid) VALUES ({sqlfyJSON(self.milkids)}, '{self.sub_start.date()}', {sqlfyJSON(self.days)}, '{self.sub_end.date()}', 1, {self.house.houseid})"
+        cursor.execute(query)
+        con.commit()
+        disconnect()
 
-            cursor.execute(
-                f"SELECT milk_delivered FROM {self.user.wing}{self.user.houseno} WHERE sub_start='{start_date}'"
-            )
+        await self.sync_details()
+        details = {
+            "subid": self.subid,
+            "milkids": self.milkids,
+            "sub_start": str(self.sub_start),
+            "days": self.days,
+            "sub_end": str(self.sub_end),
+            "pause_date": str(self.pause_date) if self.pause_date is not None else None,
+            "resume_date": str(self.resume_date)
+            if self.resume_date is not None
+            else None,
+            "delivered": self.delivered,
+            "not_delivered": self.not_delivered,
+            "active": self.active,
+            "houseid": self.house.houseid,
+        }
+        return details
 
-            try:
-                milk_delivered = eval(cursor.fetchall()[0][0]).append(date)
-            except:
-                milk_delivered = [date]
+    # * inline with new schema
+    async def pause(self, pause_date: datetime, resume_date: datetime):
+        connect()
+        from db import con
 
-            cursor.execute(
-                f"UPDATE {self.user.wing}{self.user.houseno} SET milk_delivered='{milk_delivered}'"
-            )
+        cursor = con.cursor()
+        query = f"UPDATE subs SET pause_date='{str(pause_date)}', resume_date='{str(resume_date)}' WHERE subid={self.subid}"
+        cursor.execute(query)
+        con.commit()
+        disconnect()
 
-            con.commit()
-            disconnect()
-            return {"success": "MILK_DELIVER_SUCCESS"}
-        except Exception as e:
-            disconnect()
-            return {"error": e}
+        await self.sync_details()
+        details = {
+            "subid": self.subid,
+            "milkids": self.milkids,
+            "sub_start": str(self.sub_start),
+            "days": self.days,
+            "sub_end": str(self.sub_end),
+            "pause_date": str(self.pause_date) if self.pause_date is not None else None,
+            "resume_date": str(self.resume_date)
+            if self.resume_date is not None
+            else None,
+            "delivered": self.delivered,
+            "not_delivered": self.not_delivered,
+            "active": self.active,
+            "houseid": self.house.houseid,
+        }
+        return details
+
+    # * inline with new schema
+    async def deliver(self, clientDate: datetime):
+        connect()
+        from db import con
+
+        cursor = con.cursor()
+
+        cursor.execute(f"SELECT delivered FROM subs WHERE subid={self.subid}")
+
+        result = cursor.fetchall()
+        row = result[0]
+        delivered = eval(row[0])
+        clientDateInt = intFromDate(clientDate)
+        delivered.append(clientDateInt)
+
+        query = (
+            f"UPDATE subs SET delivered={sqlfyJSON(delivered)} WHERE subid={self.subid}"
+        )
+        cursor.execute(query)
+        con.commit()
+        disconnect()
