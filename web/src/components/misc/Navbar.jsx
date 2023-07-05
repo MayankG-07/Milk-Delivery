@@ -33,8 +33,10 @@ export const Navbar = (props) => {
 
   const userContext = useContext(UserContext);
   const { userDetails, handleDetailsChange } = userContext;
-  const loggedIn = Object.keys(userDetails).length !== 0;
-  const verified = loggedIn ? userDetails.verified : null;
+  const loggedIn = !(userDetails.userid === null);
+  // console.log(userDetails);
+  // console.log(loggedIn);
+  // const verified = loggedIn ? userDetails.verified : null;
 
   //   const handleNavigate = (item) => {
   //     navigate(paths[navItems.indexOf(item)]);
@@ -76,7 +78,7 @@ export const Navbar = (props) => {
           <></>
         )}
 
-        {loggedIn && !verified ? (
+        {/* {loggedIn && !verified ? (
           <ListItem disablePadding>
             <ListItemButton
               sx={{ textAlign: "center" }}
@@ -87,7 +89,7 @@ export const Navbar = (props) => {
           </ListItem>
         ) : (
           <></>
-        )}
+        )} */}
 
         <ListItem disablePadding>
           <ListItemButton
@@ -97,7 +99,6 @@ export const Navbar = (props) => {
                 ? () => {
                     handleDetailsChange({});
                     navigate("/home");
-                    window.location.reload();
                   }
                 : () => {
                     handleDetailsChange({});

@@ -56,7 +56,7 @@ class User:
         self.phone = row[3]
         self.imgUrl = row[5]
         self.houseids = eval(row[6]) if row[6] is not None else None
-        self.verified = row[7]
+        self.verified = bool(row[7])
 
     # * inline with new schema
     async def register(self):
@@ -124,7 +124,7 @@ class User:
         self.password.hashed = req_pwd
         disconnect()
         if not self.password.verify_password():
-            raise HTTPException(status_code=400, detail="Incorrect email or password")
+            raise HTTPException(status_code=400, detail="Invalid password")
 
         return {
             "access_token": create_access_token(str(self.userid)),

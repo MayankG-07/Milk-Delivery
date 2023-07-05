@@ -7,15 +7,18 @@ export const UserContext = createContext({
 });
 
 export const UserContextProvider = ({ children }) => {
-  const [details, setDetails] = useState(
-    JSON.parse(localStorage.getItem("user") || "{}")
-  );
+  const [details, setDetails] = useState({
+    userid:
+      localStorage.getItem("userid") === "undefined"
+        ? null
+        : localStorage.getItem("userid"),
+  });
 
   const handleDetailsChange = (newDetails) => {
     console.log(newDetails);
     setDetails(newDetails);
     // console.log(details);
-    localStorage.setItem("user", JSON.stringify(newDetails));
+    localStorage.setItem("userid", newDetails.userid);
   };
 
   const contextValue = {

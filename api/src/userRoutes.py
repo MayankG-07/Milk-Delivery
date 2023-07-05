@@ -81,3 +81,19 @@ async def register(params: RegisterUserParams):
     details = await user.register()
 
     return details
+
+
+@app.get("/user/{userid}/details", summary="Get details of a user", status_code=200)
+async def get_user_details(userid: int):
+    user = User(userid=userid)
+    await user.sync_details()
+    details = {
+        "userid": user.userid,
+        "name": user.name,
+        "email": user.email,
+        "phone": user.phone,
+        "imgUrl": user.imgUrl,
+        "houseids": user.houseids,
+        "verified": user.verified,
+    }
+    return details

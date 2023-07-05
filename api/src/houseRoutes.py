@@ -236,3 +236,17 @@ async def pay_bill(houseid: int, subid: int, billid: int):
     await bill.sync_details()
 
     await bill.pay()
+
+
+# * inline with new schema
+@app.get("/house/{houseid}/details", summary="View details of a house", status_code=200)
+async def get_house_details(houseid: int):
+    house = House(houseid=houseid)
+    await house.sync_details()
+    details = {
+        "houseid": house.houseid,
+        "wing": house.wing,
+        "houseno": house.houseno,
+        "members": house.members,
+    }
+    return details

@@ -1,5 +1,4 @@
 // import { Register } from "./Register";
-import { Login } from "./Login";
 import { Box } from "@mui/material";
 // import { useState } from "react";
 // import { VerifyEmail } from "./VerifyEmail";
@@ -15,25 +14,7 @@ const Home = () => {
   // const navigate = useNavigate();
 
   // console.log(userDetails, userDetails.length);
-  return (
-    <>
-      {Object.keys(userDetails).length === 0 ? (
-        <Box>
-          <Login
-            boxStyles={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginTop: 10,
-              flexDirection: "column",
-            }}
-          />
-        </Box>
-      ) : (
-        <></>
-      )}
-    </>
-  );
+  return <>{userDetails.userid === null ? <Box>Home</Box> : <></>}</>;
 };
 
 export default Home;

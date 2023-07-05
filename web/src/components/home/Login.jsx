@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { url } from "./../../assets/res";
 import {
@@ -15,19 +15,134 @@ import {
   Radio,
   Chip,
   CircularProgress,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Timer } from "../misc/Timer";
 import { useNavigate } from "react-router-dom";
-import { PropTypes } from "prop-types";
-import { UserContext } from "../../context/userContext";
+// import { UserContext } from "../../context/userContext";
 
-export const Login = ({ boxStyles }) => {
+export const Login = () => {
   const [details, setDetails] = useState({
+    houseid: null,
     wing: null,
     houseno: null,
+    memberId: null,
     password: { value: null, show: false },
   });
+
+  const [memberDetails, setMemberDetails] = useState({
+    loading: false,
+    members: [],
+    called: false,
+  });
+
+  useEffect(() => {
+    // get house id from db
+    if (
+      !(details.wing === null) &&
+      !(details.houseno === null) &&
+      details.houseid === null
+    ) {
+      axios
+        .put(`${url}/misc/sql-query`, null, {
+          params: {
+            query: `SELECT houseid FROM houses WHERE wing='${details.wing}' AND houseno=${details.houseno}`,
+          },
+        })
+        .then((res) => {
+          if (!(res.data.data.length === 0)) {
+            const houseid = res.data.data[0][0];
+            setDetails((prevDetails) => ({ ...prevDetails, houseid }));
+          }
+        })
+        .catch((err) => console.log(err));
+    }
+
+    // get members from db
+    if (!(details.houseid === null) && !memberDetails.called) {
+      let called = false;
+      setMemberDetails((prevDetails) => ({
+        ...prevDetails,
+        loading: true,
+      }));
+      axios
+        .get(`${url}/house/${details.houseid}/details`)
+        .then((res) => {
+          const memberIds = res.data.members;
+          let members = [];
+
+          memberIds.forEach((memberId) => {
+            members.push({
+              id: memberId,
+              name: null,
+            });
+          });
+
+          setMemberDetails((prevDetails) => ({
+            ...prevDetails,
+            members,
+          }));
+        })
+        .catch((err) => {
+          console.log(err);
+          setMemberDetails((prevDetails) => ({
+            ...prevDetails,
+            loading: false,
+          }));
+        });
+
+      // getting member names
+      if (memberDetails.loading) {
+        for (let i = 0; i < memberDetails.members.length; i++) {
+          called = true;
+          if (!memberDetails.loading) {
+            break;
+          }
+          const userid = memberDetails.members[i].id;
+          console.log("call for user details", userid);
+          axios
+            .get(`${url}/user/${userid}/details`)
+            .then((res) => {
+              setMemberDetails((prevDetails) => ({
+                ...prevDetails,
+                members: prevDetails.members.map((item) =>
+                  item.id === userid
+                    ? {
+                        id: item.id,
+                        name: res.data.name,
+                        email: res.data.email,
+                      }
+                    : item
+                ),
+              }));
+            })
+            .catch((err) => {
+              console.log(err);
+              setMemberDetails((prevDetails) => ({
+                ...prevDetails,
+                loading: false,
+              }));
+            });
+        }
+
+        setMemberDetails((prevDetails) => ({
+          ...prevDetails,
+          loading: false,
+          called,
+        }));
+      }
+    }
+  }, [
+    details.wing,
+    details.houseno,
+    details.houseid,
+    memberDetails.called,
+    memberDetails.loading,
+    memberDetails.members,
+  ]);
 
   const [otp, setOtp] = useState({
     sent: false,
@@ -35,83 +150,91 @@ export const Login = ({ boxStyles }) => {
     sendAgain: false,
     time: null,
     value: null,
-    sentValue: null,
   });
 
   const [loginType, setLoginType] = useState({ loading: false, withOtp: true });
 
   const navigate = useNavigate();
-  const userContext = useContext(UserContext);
-  const { handleDetailsChange } = userContext;
+  // const userContext = useContext(UserContext);
+  // const { handleDetailsChange } = userContext;
 
   const handleSendOtp = () => {
-    if (!details.houseno) {
-      alert("Enter valid details");
-      return;
-    }
+    // if (!details.wing || !details.houseno || !details.memberId) {
+    //   alert("Enter valid details");
+    //   return;
+    // }
 
     setOtp((prevOtp) => ({ ...prevOtp, loading: true }));
 
-    axios
-      .patch(`${url}/api/get_otp`, {
-        wing: details.wing,
-        houseno: details.houseno,
-      })
+    axios({ method: "POST", url: `${url}/user/${details.memberId}/send-otp` })
       .then((res) => {
         setOtp((prevOtp) => ({ ...prevOtp, loading: false }));
-        if (res.data.success) {
+        // console.log(res);
+        if (res.status === 204) {
           const time = new Date();
           time.setSeconds(time.getSeconds() + 300);
 
           setOtp((prevOtp) => ({
             ...prevOtp,
             sent: true,
-            sentValue: res.data.data.otp,
             sendAgain: false,
             time,
           }));
-          return;
-        } else if (res.data.error === "INVALID_CREDS") {
-          alert("Invalid details");
-          return;
-        } else {
-          alert("An error occurred");
-          console.log(res.data.error);
           return;
         }
       })
       .catch((error) => {
         setOtp((prevOtp) => ({ ...prevOtp, loading: false }));
-        alert("An error occurred");
-        console.log(error);
+        // alert("An error occurred");
+        // console.log(error);
+        if (
+          error.response.status === 400 &&
+          error.response.data.detail === "Invalid userid"
+        ) {
+          alert("This member does not exist. Please contact the admin.");
+        }
       });
   };
 
-  const handleLoginOtp = () => {
+  const handleLoginOtp = async () => {
     setLoginType({ ...loginType, loading: true });
-    axios
-      .patch(`${url}/api/login/otp`, {
-        wing: details.wing,
-        houseno: details.houseno,
-        otp: otp.value,
-      })
+    var otpFormData = new FormData();
+    let email = "";
+    for (let i = 0; i < memberDetails.members.length; i++) {
+      if (memberDetails.members[i].id === details.memberId) {
+        email = memberDetails.members[i].email;
+      }
+    }
+    console.log(email, otp.value);
+    otpFormData.append("username", email);
+    otpFormData.append("password", otp.value);
+    await axios({
+      method: "POST",
+      url: `${url}/user/login/otp`,
+      data: otpFormData,
+      headers: { "Content-Type": "multipart/form-data" },
+    })
       .then((res) => {
         setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
-        if (res.data.success) {
+        if (
+          res.data.access_token &&
+          res.data.refresh_token &&
+          res.status === 200
+        ) {
           login();
-          return;
-        } else if (res.data.error === "INVALID_OTP") {
-          alert("Invalid OTP");
-          return;
-        } else {
-          alert("An error occurred");
-          console.log(res.data.error);
           return;
         }
       })
       .catch((error) => {
         setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
-        alert("An error occurred");
+        if (
+          error.response.status === 400 &&
+          error.response.data.detail === "Invalid OTP"
+        ) {
+          alert(
+            "The OTP you entered is invalid. Please check the OTP you have entered."
+          );
+        }
         console.log(error);
         return;
       });
@@ -125,88 +248,138 @@ export const Login = ({ boxStyles }) => {
       }));
     }
 
-    if (!details.houseno || !details.password.value) {
-      alert("Enter valid house no and password");
-      return;
-    }
-
     setLoginType((prevLoginType) => ({ ...prevLoginType, loading: true }));
 
-    axios
-      .patch(`${url}/api/login/password`, {
-        wing: details.wing,
-        houseno: details.houseno,
-        password: details.password.value,
-      })
+    var passwordFormData = new FormData();
+    let email = "";
+    for (let i = 0; i < memberDetails.members.length; i++) {
+      if (memberDetails.members[i].id === details.memberId) {
+        email = memberDetails.members[i].email;
+      }
+    }
+    console.log(email, details.password.value);
+    passwordFormData.append("username", email);
+    passwordFormData.append("password", details.password.value);
+    axios({
+      method: "POST",
+      url: `${url}/user/login/password`,
+      data: passwordFormData,
+      headers: { "Content-Type": "multipart/form-data" },
+    })
       .then((res) => {
         setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
         console.log(res);
-        if (res.data.success) {
+        if (
+          res.status === 200 &&
+          res.data.access_token &&
+          res.data.refresh_token
+        ) {
           login();
-          return;
-        } else if (res.data.error === "INVALID_CREDS") {
-          alert("Invalid details");
-          return;
-        } else {
-          console.log(res.data);
-          alert("Error occurred");
           return;
         }
       })
       .catch((error) => {
         setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
-        alert("An error occurred");
-        console.log(error);
+        // console.log(error);
+        if (
+          error.response.status === 400 &&
+          error.response.data.detail === "Invalid password"
+        ) {
+          alert(
+            "The house details or password you have entered is/are incorrect. Please check the details or password you have entered."
+          );
+        }
         return;
       });
   };
 
   const login = async () => {
     // TODO login redirect code goes here
-    // console.log(details.wing, details.houseno);
+    console.log("Logged in successfully");
 
-    await axios
-      .put(`${url}/admin/query`, {
-        query: `SELECT verified FROM users WHERE wing='${details.wing}' AND houseno=${details.houseno}`,
-      })
-      .then((res) => {
-        if (res.data.success) {
-          const verified = res.data.data[0][0];
-          handleDetailsChange({
-            wing: details.wing,
-            houseno: details.houseno,
-            verified: verified === 1 ? true : false,
-          });
-        } else {
-          alert("An error occurred");
-          console.log(res.data.error, res.data.message);
-        }
-      })
-      .catch((err) => {
-        alert("An error occurred");
-        console.log(err);
-      });
+    // await axios
+    //   .put(`${url}/admin/query`, {
+    //     query: `SELECT verified FROM users WHERE wing='${details.wing}' AND houseno=${details.houseno}`,
+    //   })
+    //   .then((res) => {
+    //     if (res.data.success) {
+    //       const verified = res.data.data[0][0];
+    //       handleDetailsChange({
+    //         wing: details.wing,
+    //         houseno: details.houseno,
+    //         verified: verified === 1 ? true : false,
+    //       });
+    //     } else {
+    //       alert("An error occurred");
+    //       console.log(res.data.error, res.data.message);
+    //     }
+    //   })
+    //   .catch((err) => {
+    //     alert("An error occurred");
+    //     console.log(err);
+    //   });
 
-    // handleDetailsChange({ wing: details.wing, houseno: details.houseno });
-    navigate("/dashboard");
+    //  handleDetailsChange({ wing: details.wing, houseno: details.houseno });
+    // navigate("/dashboard");
   };
 
+  console.log(memberDetails);
+
   return (
-    <Box sx={boxStyles}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: { xs: "center", sm: "flex-start" },
+        marginTop: { xs: "22%", sm: 12 },
+        marginLeft: { sm: 10 },
+      }}
+    >
       <Typography sx={{ paddingY: 2 }} variant="h5">
         Login
       </Typography>
-      <Divider sx={{ marginBottom: 1, width: "80%" }} />
+      <Divider
+        sx={{
+          display: { xs: "flex" },
+          marginBottom: { xs: 0.5, sm: 2 },
+          width: { sx: "80%", sm: "40%" },
+        }}
+      />
       <Box sx={{ display: "flex", flexDirection: "row", width: "auto" }}>
-        <FormControl disabled={otp.loading}>
-          <Typography variant="body1" color="text.secondary">
-            Wing:
-          </Typography>
+        <Typography
+          variant="body1"
+          color="text.primary"
+          sx={{
+            marginTop: 1,
+            marginRight: 1.5,
+          }}
+        >
+          Wing:
+        </Typography>
+        <FormControl disabled={otp.loading} sx={{ marginBottom: 1 }}>
           <RadioGroup
             value={details.wing ? details.wing : ""}
-            onChange={(_event, newValue) =>
-              setDetails((prevDetails) => ({ ...prevDetails, wing: newValue }))
-            }
+            onChange={(_event, newValue) => {
+              setDetails((prevDetails) => ({
+                ...prevDetails,
+                wing: newValue,
+                houseid: null,
+                memberId: null,
+              }));
+              setMemberDetails((prevDetails) => ({
+                ...prevDetails,
+                members: [],
+                called: false,
+              }));
+              setOtp({
+                sent: false,
+                loading: false,
+                sendAgain: false,
+                time: null,
+                value: null,
+                sentValue: null,
+              });
+            }}
             row
           >
             <FormControlLabel value="a" control={<Radio />} label="A" />
@@ -215,7 +388,7 @@ export const Login = ({ boxStyles }) => {
         </FormControl>
       </Box>
       <TextField
-        sx={{ marginY: 1, width: "87%", color: "primary" }}
+        sx={{ marginY: 1, width: "87%", maxWidth: "400px", color: "primary" }}
         value={details.houseno ? details.houseno : ""}
         label="House No"
         onChange={(event) => {
@@ -227,6 +400,24 @@ export const Login = ({ boxStyles }) => {
           } else if (event.target.value === "") {
             setDetails((prevDetails) => ({ ...prevDetails, houseno: null }));
           }
+          setDetails((prevDetails) => ({
+            ...prevDetails,
+            houseid: null,
+            memberId: null,
+          }));
+          setMemberDetails((prevDetails) => ({
+            ...prevDetails,
+            members: [],
+            called: false,
+          }));
+          setOtp({
+            sent: false,
+            loading: false,
+            sendAgain: false,
+            time: null,
+            value: null,
+            sentValue: null,
+          });
         }}
         disabled={otp.loading}
         InputProps={
@@ -265,7 +456,7 @@ export const Login = ({ boxStyles }) => {
                             ? "Resend OTP"
                             : "Send OTP"
                         }
-                        disabled={otp.loading}
+                        disabled={otp.loading || details.memberId === null}
                         clickable={!otp.loading}
                         onClick={handleSendOtp}
                       />
@@ -276,10 +467,49 @@ export const Login = ({ boxStyles }) => {
             : {}
         }
       />
+      <FormControl
+        sx={{ width: "87%", maxWidth: "400px", marginY: 1 }}
+        disabled={!memberDetails.called || otp.loading}
+      >
+        <InputLabel id="member-select-label">
+          {memberDetails.loading && details.houseid
+            ? "Loading Members..."
+            : "Select Member"}
+        </InputLabel>
+        <Select
+          labelId="member-select-label"
+          id="member-select"
+          value={!(details.memberId === null) ? details.memberId : ""}
+          label={
+            memberDetails.loading && details.houseid
+              ? "Loading Members..."
+              : "Select Member"
+          }
+          onChange={(event) =>
+            setDetails((prevDetails) => ({
+              ...prevDetails,
+              memberId: event.target.value,
+            }))
+          }
+        >
+          {!memberDetails.loading && details.houseid
+            ? memberDetails.members.map((member) => (
+                <MenuItem key={member.id} value={member.id}>
+                  {member.name}
+                </MenuItem>
+              ))
+            : []}
+        </Select>
+      </FormControl>
       {loginType.withOtp ? (
         <>
           <TextField
-            sx={{ marginY: 1, width: "87%", color: "primary" }}
+            sx={{
+              marginY: 1,
+              width: "87%",
+              maxWidth: "400px",
+              color: "primary",
+            }}
             value={otp.value ? otp.value : ""}
             label="OTP"
             onChange={(event) => {
@@ -298,10 +528,16 @@ export const Login = ({ boxStyles }) => {
       ) : (
         <>
           <TextField
-            sx={{ marginY: 1, width: "87%", color: "primary" }}
+            sx={{
+              marginY: 1,
+              width: "87%",
+              maxWidth: "400px",
+              color: "primary",
+            }}
             value={details.password.value ? details.password.value : ""}
             label="Password"
             type={details.password.show ? "text" : "password"}
+            disabled={!details.memberId}
             onChange={(event) =>
               setDetails((prevDetails) => ({
                 ...prevDetails,
@@ -316,6 +552,7 @@ export const Login = ({ boxStyles }) => {
                 <InputAdornment position="end">
                   <IconButton
                     edge="end"
+                    disabled={!details.memberId}
                     onClick={() =>
                       setDetails((prevDetails) => ({
                         ...prevDetails,
@@ -335,61 +572,89 @@ export const Login = ({ boxStyles }) => {
         </>
       )}
 
-      <Box sx={{ position: "relative" }}>
-        <Button
-          variant="contained"
-          onClick={loginType.withOtp ? handleLoginOtp : handleLoginPassword}
-          sx={{ marginY: 1, width: "87%", color: "primary" }}
-          disabled={
-            loginType.loading
-              ? true
-              : loginType.withOtp
-              ? !details.houseno ||
-                !otp.value ||
-                otp.value < 1000 ||
-                otp.value > 9999
-              : !details.houseno || !details.password.value
-          }
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
+          alignItems: { xs: "center", sm: "flex-start" },
+          justifyContent: { xs: "center", md: "center" },
+        }}
+      >
+        <Box
+          sx={{
+            position: "relative",
+            width: "inherit",
+            display: { xs: "flex", sm: "block" },
+            justifyContent: "center",
+          }}
         >
-          Login
-        </Button>
-        {loginType.loading && (
-          <CircularProgress
-            size={24}
+          <Button
+            variant="contained"
+            onClick={loginType.withOtp ? handleLoginOtp : handleLoginPassword}
             sx={{
+              marginY: 1,
+              width: "87%",
+              maxWidth: "400px",
               color: "primary",
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              marginTop: "-12px",
-              marginLeft: "-12px",
             }}
-          />
-        )}
-      </Box>
-      <Button
-        variant="outlined"
-        onClick={() =>
-          setLoginType((prevLoginType) => ({
-            ...prevLoginType,
-            withOtp: !prevLoginType.withOtp,
-          }))
-        }
-        sx={{ marginY: 0.15, width: "87%", color: "primary" }}
-      >
-        {loginType.withOtp ? <>Login with Password</> : <>Login with OTP</>}
-      </Button>
+            disabled={
+              loginType.loading
+                ? true
+                : loginType.withOtp
+                ? !details.houseid ||
+                  !otp.value ||
+                  otp.value < 1000 ||
+                  otp.value > 9999
+                : !details.houseid || !details.password.value
+            }
+          >
+            Login
+          </Button>
+          {loginType.loading && (
+            <CircularProgress
+              size={24}
+              sx={{
+                color: "primary",
+                position: "absolute",
+                top: "50%",
+                left: { xs: "50%", sm: "200px" },
+                marginTop: "-12px",
+                marginLeft: "-12px",
+              }}
+            />
+          )}
+        </Box>
+        <Button
+          variant="outlined"
+          onClick={() =>
+            setLoginType((prevLoginType) => ({
+              ...prevLoginType,
+              withOtp: !prevLoginType.withOtp,
+            }))
+          }
+          sx={{
+            marginTop: { xs: 0.5, sm: 0.5, md: 1 },
+            width: "87%",
+            maxWidth: "400px",
+            color: "primary",
+          }}
+        >
+          {loginType.withOtp ? <>Login with Password</> : <>Login with OTP</>}
+        </Button>
 
-      <Button
-        sx={{ marginY: 1, width: "87%", color: "primary" }}
-        onClick={() => navigate("/register")}
-      >
-        New User? Register Here
-      </Button>
+        <Button
+          sx={{
+            marginY: 1,
+            width: "87%",
+            maxWidth: "400px",
+            color: "primary",
+          }}
+          onClick={() => navigate("/register")}
+        >
+          New User? Register Here
+        </Button>
+      </Box>
     </Box>
   );
-};
-
-Login.propTypes = {
-  boxStyles: PropTypes.object,
 };
