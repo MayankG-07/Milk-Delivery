@@ -2,12 +2,15 @@ from app import app
 from sub import Subscription
 from house import House
 from misc import dateFromString
-from params import NewSubParams, PauseSubParams
+from schemas import NewSubParams, PauseSubParams
+from fastapi import Depends
+from utils import get_current_user
 
 
 # * inline with new schema
 @app.post("/sub/new", summary="Create new subscription", status_code=201)
-async def subscribe(params: NewSubParams):
+async def subscribe(params: NewSubParams, token_data=Depends(get_current_user)):
+    userid = token_data.get("userid")
     houseid = params.houseid
     milkids = params.milkids
     sub_start = dateFromString(params.sub_start)
@@ -26,7 +29,10 @@ async def subscribe(params: NewSubParams):
 
 # * inline with new schema
 @app.put("/sub/{subid}/pause", summary="Pause subscription", status_code=200)
-async def pause_sub(subid: int, params: PauseSubParams):
+async def pause_sub(
+    subid: int, params: PauseSubParams, token_data=Depends(get_current_user)
+):
+    userid = token_data.get("userid")
     pause_date = dateFromString(params.pause_date)
     resume_date = dateFromString(params.resume_date)
 

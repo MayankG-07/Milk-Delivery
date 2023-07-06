@@ -1,6 +1,11 @@
 from pydantic import BaseModel
 
 
+"""
+Request Body Parameters Models
+"""
+
+
 class RegisterHouseParams(BaseModel):
     wing: str
     houseno: int
@@ -38,3 +43,15 @@ class NewSubParams(BaseModel):
 class PauseSubParams(BaseModel):
     pause_date: str
     resume_date: str
+
+
+"""
+Response Models
+"""
+
+
+class RegisterHouseResponseModel(BaseModel):
+    houseid: int
+    wing: str
+    houseno: int
+    members: list[int]

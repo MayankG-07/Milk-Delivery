@@ -22,7 +22,6 @@ import {
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Timer } from "../misc/Timer";
 import { useNavigate } from "react-router-dom";
-// import { UserContext } from "../../context/userContext";
 
 export const Login = () => {
   const [details, setDetails] = useState({
@@ -155,21 +154,17 @@ export const Login = () => {
   const [loginType, setLoginType] = useState({ loading: false, withOtp: true });
 
   const navigate = useNavigate();
-  // const userContext = useContext(UserContext);
-  // const { handleDetailsChange } = userContext;
 
-  const handleSendOtp = () => {
-    // if (!details.wing || !details.houseno || !details.memberId) {
-    //   alert("Enter valid details");
-    //   return;
-    // }
-
+  const handleSendOtp = async () => {
     setOtp((prevOtp) => ({ ...prevOtp, loading: true }));
 
-    axios({ method: "POST", url: `${url}/user/${details.memberId}/send-otp` })
+    await axios({
+      method: "POST",
+      url: `${url}/user/${details.memberId}/send-otp`,
+    })
       .then((res) => {
         setOtp((prevOtp) => ({ ...prevOtp, loading: false }));
-        // console.log(res);
+
         if (res.status === 204) {
           const time = new Date();
           time.setSeconds(time.getSeconds() + 300);
@@ -185,8 +180,7 @@ export const Login = () => {
       })
       .catch((error) => {
         setOtp((prevOtp) => ({ ...prevOtp, loading: false }));
-        // alert("An error occurred");
-        // console.log(error);
+
         if (
           error.response.status === 400 &&
           error.response.data.detail === "Invalid userid"
@@ -205,7 +199,7 @@ export const Login = () => {
         email = memberDetails.members[i].email;
       }
     }
-    console.log(email, otp.value);
+
     otpFormData.append("username", email);
     otpFormData.append("password", otp.value);
     await axios({
@@ -235,12 +229,12 @@ export const Login = () => {
             "The OTP you entered is invalid. Please check the OTP you have entered."
           );
         }
-        console.log(error);
+
         return;
       });
   };
 
-  const handleLoginPassword = () => {
+  const handleLoginPassword = async () => {
     if (details.password.show) {
       setDetails((prevDetails) => ({
         ...prevDetails,
@@ -257,10 +251,10 @@ export const Login = () => {
         email = memberDetails.members[i].email;
       }
     }
-    console.log(email, details.password.value);
+
     passwordFormData.append("username", email);
     passwordFormData.append("password", details.password.value);
-    axios({
+    await axios({
       method: "POST",
       url: `${url}/user/login/password`,
       data: passwordFormData,
@@ -268,7 +262,7 @@ export const Login = () => {
     })
       .then((res) => {
         setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
-        console.log(res);
+
         if (
           res.status === 200 &&
           res.data.access_token &&
@@ -280,7 +274,7 @@ export const Login = () => {
       })
       .catch((error) => {
         setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
-        // console.log(error);
+
         if (
           error.response.status === 400 &&
           error.response.data.detail === "Invalid password"
@@ -296,34 +290,7 @@ export const Login = () => {
   const login = async () => {
     // TODO login redirect code goes here
     console.log("Logged in successfully");
-
-    // await axios
-    //   .put(`${url}/admin/query`, {
-    //     query: `SELECT verified FROM users WHERE wing='${details.wing}' AND houseno=${details.houseno}`,
-    //   })
-    //   .then((res) => {
-    //     if (res.data.success) {
-    //       const verified = res.data.data[0][0];
-    //       handleDetailsChange({
-    //         wing: details.wing,
-    //         houseno: details.houseno,
-    //         verified: verified === 1 ? true : false,
-    //       });
-    //     } else {
-    //       alert("An error occurred");
-    //       console.log(res.data.error, res.data.message);
-    //     }
-    //   })
-    //   .catch((err) => {
-    //     alert("An error occurred");
-    //     console.log(err);
-    //   });
-
-    //  handleDetailsChange({ wing: details.wing, houseno: details.houseno });
-    // navigate("/dashboard");
   };
-
-  console.log(memberDetails);
 
   return (
     <Box

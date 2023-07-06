@@ -68,10 +68,12 @@ class House:
         result = cursor.fetchall()
         row = result[0]
         details = {
-            "houseid": row[0],
+            "houseid": int(row[0]),
             "wing": row[1],
-            "houseno": row[2],
-            "members": eval(row[3]) if row[3] is not None else [],
+            "houseno": int(row[2]),
+            "members": [int(memberId) for memberId in eval(row[3])]
+            if row[3] is not None
+            else [],
         }
 
         disconnect()

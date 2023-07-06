@@ -4,14 +4,14 @@ from db import connect, disconnect
 from fastapi import HTTPException, Depends
 from otp import OTP
 from fastapi.security import OAuth2PasswordRequestForm
-from params import RegisterUserParams
+from schemas import RegisterUserParams
+from utils import get_current_user
 
 
 # * inline with new schema
-@app.post(
-    "/user/{userid}/verify-email", summary="Verify email of user", status_code=204
-)
-async def verify_email(userid: int):
+@app.post("/user/verify-email", summary="Verify email of user", status_code=204)
+async def verify_email(token_data=Depends(get_current_user)):
+    userid = token_data.get("userid")
     user = User(userid=userid)
     await user.sync_details()
 
@@ -19,13 +19,13 @@ async def verify_email(userid: int):
 
 
 # * inline with new schema
-@app.post("/user/{userid}/send-otp", summary="Send OTP to user", status_code=204)
-async def get_otp(userid: int):
+@app.post("/user/send-otp", summary="Send OTP to user", status_code=204)
+async def get_otp(token_data=Depends(get_current_user)):
     connect()
     from db import con
 
     cursor = con.cursor()
-
+    userid = token_data.get("userid")
     cursor.execute(f"SELECT * FROM users WHERE userid={userid}")
 
     result = cursor.fetchall()
@@ -45,27 +45,36 @@ async def get_otp(userid: int):
 
 
 # * inline with new schema
-@app.post("/user/login/password", summary="Login by password", status_code=200)
+@app.post("/user/login", summary="Login by password", status_code=200)
 async def login_with_password(params: OAuth2PasswordRequestForm = Depends()):
     email = params.username
-    password = params.password
+    data = eval(params.password)
+    login_type = data.get("type")
+    if login_type == "password":
+        password = data.get("password")
+        user = User(email=email, password=password)
+        await user.sync_details()
+        details = await user.loginPassword()
+    elif login_type == "otp":
+        otp = data.get("otp")
+        user = User(email=email, otp=otp)
+        await user.sync_details()
+        details = await user.loginOtp()
+    else:
+        raise HTTPException(status_code=400, detail="Invalid data")
 
-    user = User(email=email, password=password)
-    await user.sync_details()
-    details = await user.loginPassword()
     return details
 
 
-# * inline with new schema
-@app.post("/user/login/otp", summary="Login by OTP", status_code=200)
-async def login_with_otp(params: OAuth2PasswordRequestForm = Depends()):
-    email = params.username
-    otp = params.password
+# @app.post("/user/login/otp", summary="Login", status_code=200)
+# async def login_with_otp(params: OAuth2PasswordRequestForm = Depends()):
+#     email = params.username
+#     otp = params.password
 
-    user = User(email=email, otp=otp)
-    await user.sync_details()
-    details = await user.loginOtp()
-    return details
+#     user = User(email=email, otp=otp)
+#     await user.sync_details()
+#     details = await user.loginOtp()
+#     return details
 
 
 # * inline with new schema

@@ -91,24 +91,33 @@ export const Navbar = (props) => {
           <></>
         )} */}
 
-        <ListItem disablePadding>
-          <ListItemButton
-            sx={{ textAlign: "center" }}
-            onClick={
-              loggedIn
-                ? () => {
-                    handleDetailsChange({});
-                    navigate("/home");
-                  }
-                : () => {
-                    handleDetailsChange({});
-                    navigate("/login");
-                  }
-            }
-          >
-            <ListItemText primary={loggedIn ? "Logout" : "Login"} />
-          </ListItemButton>
-        </ListItem>
+        {loggedIn ? (
+          <ListItem disablePadding>
+            <ListItemButton
+              sx={{ textAlign: "center" }}
+              onClick={() => {
+                handleDetailsChange({ userid: null });
+                navigate("/home");
+              }}
+            >
+              <ListItemText primary="Logout" />
+            </ListItemButton>
+          </ListItem>
+        ) : (
+          <></>
+        )}
+        {!loggedIn ? (
+          <ListItem disablePadding>
+            <ListItemButton
+              sx={{ textAlign: "center" }}
+              onClick={() => navigate("/login")}
+            >
+              <ListItemText primary="Login" />
+            </ListItemButton>
+          </ListItem>
+        ) : (
+          <></>
+        )}
         {!loggedIn ? (
           <ListItem disablePadding>
             <ListItemButton
@@ -158,23 +167,43 @@ export const Navbar = (props) => {
               marginLeft: { md: "55%", sm: "45%" },
             }}
           >
-            <Button sx={{ color: "#fff" }} onClick={() => navigate("/home")}>
-              Home
-            </Button>
-            <Button
-              sx={{ color: "#fff" }}
-              onClick={
-                loggedIn
-                  ? () => {
-                      handleDetailsChange({});
-                      navigate("/home");
-                      window.location.reload();
-                    }
-                  : () => navigate("/login")
-              }
-            >
-              {loggedIn ? <>Logout</> : <>Login</>}
-            </Button>
+            {!loggedIn ? (
+              <Button sx={{ color: "#fff" }} onClick={() => navigate("/home")}>
+                Home
+              </Button>
+            ) : (
+              <></>
+            )}
+            {!loggedIn ? (
+              <Button sx={{ color: "#fff" }} onClick={() => navigate("/login")}>
+                Login
+              </Button>
+            ) : (
+              <></>
+            )}
+            {!loggedIn ? (
+              <Button
+                sx={{ color: "#fff" }}
+                onClick={() => navigate("/register")}
+              >
+                Register
+              </Button>
+            ) : (
+              <></>
+            )}
+            {loggedIn ? (
+              <Button
+                sx={{ color: "#fff" }}
+                onClick={() => {
+                  handleDetailsChange({ userid: null });
+                  navigate("/home");
+                }}
+              >
+                Logout
+              </Button>
+            ) : (
+              <></>
+            )}
           </Box>
         </Toolbar>
       </AppBar>

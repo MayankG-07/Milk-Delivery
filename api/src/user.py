@@ -1,4 +1,4 @@
-from utils import Password, create_access_token, create_refresh_token
+from utils import Password, create_access_token
 from db import connect, disconnect
 from fastapi import HTTPException
 
@@ -127,8 +127,10 @@ class User:
             raise HTTPException(status_code=400, detail="Invalid password")
 
         return {
-            "access_token": create_access_token(str(self.userid)),
-            "refresh_token": create_refresh_token(str(self.userid)),
+            "access_token": create_access_token(
+                {"userid": self.userid, "login_type": "password"}
+            ),
+            "token_type": "bearer",
         }
 
     # * inline with new schema
@@ -171,8 +173,10 @@ class User:
 
         disconnect()
         return {
-            "access_token": create_access_token(str(self.userid)),
-            "refresh_token": create_refresh_token(str(self.userid)),
+            "access_token": create_access_token(
+                {"userid": self.userid, "login_type": "otp"}
+            ),
+            "token_type": "bearer",
         }
 
     # * inline with new schema

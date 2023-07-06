@@ -3,20 +3,21 @@ from house import House
 from user import User
 from db import connect, disconnect
 from misc import dateFromString
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from sub import Subscription
 from bill import Bill
 from misc import dateTimeFromString
-from params import (
-    RegisterHouseParams,
-    AddMemberParams,
-    DeleteMemberParams,
-    NotDeliveredParams,
-)
+from schemas import RegisterHouseParams, NotDeliveredParams, RegisterHouseResponseModel
+from utils import get_current_user
 
 
 # * inline with new schema
-@app.post("/house/register", summary="Register a new house", status_code=201)
+@app.post(
+    "/house/register",
+    summary="Register a new house",
+    status_code=201,
+    response_model=RegisterHouseResponseModel,
+)
 async def register_house(params: RegisterHouseParams):
     wing = params.wing
     houseno = params.houseno
@@ -211,8 +212,11 @@ async def not_delivered(houseid: int, params: NotDeliveredParams):
     summary="Generate bill of a subscription",
     status_code=201,
 )
-async def generate_bill(houseid: int, subid: int, clientDateTime: str):
+async def generate_bill(
+    houseid: int, subid: int, clientDateTime: str, token_data=Depends(get_current_user)
+):
     clientDateTime = dateTimeFromString(clientDateTime)
+    userid = token_data.get("userid")
     house = House(houseid=houseid)
     sub = Subscription(subid=subid, house=house)
     bill = Bill(billGenTime=clientDateTime, sub=sub, house=house)
@@ -227,7 +231,10 @@ async def generate_bill(houseid: int, subid: int, clientDateTime: str):
     summary="Pay bill",
     status_code=204,
 )
-async def pay_bill(houseid: int, subid: int, billid: int):
+async def pay_bill(
+    houseid: int, subid: int, billid: int, token_data=Depends(get_current_user)
+):
+    userid = token_data.get("userid")
     house = House(houseid=houseid)
     await house.sync_details()
     sub = Subscription(subid=subid, house=house)
