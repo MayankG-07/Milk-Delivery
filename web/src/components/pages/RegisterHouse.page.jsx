@@ -3,7 +3,6 @@ import {
   Typography,
   Divider,
   FormControl,
-  FormLabel,
   RadioGroup,
   FormControlLabel,
   Radio,
@@ -17,10 +16,9 @@ import { useState } from "react";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import axios from "axios";
 import { url } from "../../assets/res";
-import { PropTypes } from "prop-types";
 import { useNavigate } from "react-router-dom";
 
-export const Register = ({ boxStyles }) => {
+export const RegisterHouse = () => {
   const [details, setDetails] = useState({
     wing: "",
     houseNo: "",
@@ -33,7 +31,7 @@ export const Register = ({ boxStyles }) => {
 
   const navigate = useNavigate();
 
-  const handleRegister = () => {
+  const handleRegisterHouse = () => {
     if (!details.wing || !details.houseNo || !details.email) {
       alert("Please enter valid details");
       return;
@@ -77,27 +75,52 @@ export const Register = ({ boxStyles }) => {
   };
 
   return (
-    <Box sx={boxStyles}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: { xs: "center", sm: "flex-start" },
+        marginTop: 12,
+        marginLeft: { sm: 10 },
+      }}
+    >
       <Typography sx={{ paddingY: 2 }} variant="h5">
-        Register
+        Register House
       </Typography>
-      <Divider sx={{ marginBottom: 1, width: "87%" }} />
-      <FormControl sx={{ width: "87%" }}>
-        <FormLabel>Wing:</FormLabel>
-        <RadioGroup
-          value={useState.wing}
-          onChange={(_event, newValue) =>
-            setDetails((prevDetails) => ({ ...prevDetails, wing: newValue }))
-          }
-          sx={{ alignItems: "center", justifyContent: "center" }}
-          row
+      <Divider
+        sx={{
+          display: { xs: "flex" },
+          marginBottom: { xs: 0.5, sm: 2 },
+          width: { sx: "80%", sm: "40%" },
+        }}
+      />
+      <Box sx={{ display: "flex", flexDirection: "row", width: "auto" }}>
+        <Typography
+          variant="body1"
+          color="text.primary"
+          sx={{
+            marginTop: 1,
+            marginRight: 1.5,
+          }}
         >
-          <FormControlLabel value="a" control={<Radio />} label="A" />
-          <FormControlLabel value="b" control={<Radio />} label="B" />
-        </RadioGroup>
-      </FormControl>
+          Wing:
+        </Typography>
+        <FormControl sx={{ marginBottom: 1 }}>
+          <RadioGroup
+            value={useState.wing}
+            onChange={(_event, newValue) =>
+              setDetails((prevDetails) => ({ ...prevDetails, wing: newValue }))
+            }
+            sx={{ alignItems: "center", justifyContent: "center" }}
+            row
+          >
+            <FormControlLabel value="a" control={<Radio />} label="A" />
+            <FormControlLabel value="b" control={<Radio />} label="B" />
+          </RadioGroup>
+        </FormControl>
+      </Box>
       <TextField
-        sx={{ marginY: 1, width: "42.5%", marginX: 1 }}
+        sx={{ marginY: 1, width: "87%", maxWidth: "400px", color: "primary" }}
         value={details.houseNo}
         label="House No"
         onChange={(event) => {
@@ -112,7 +135,7 @@ export const Register = ({ boxStyles }) => {
         }}
       />
       <TextField
-        sx={{ marginY: 1, width: "42.5%", marginX: 1 }}
+        sx={{ marginY: 1, width: "87%", maxWidth: "400px", color: "primary" }}
         value={details.email}
         label="Email"
         type="email"
@@ -124,7 +147,7 @@ export const Register = ({ boxStyles }) => {
         }
       />
       <TextField
-        sx={{ marginY: 1, width: "42.5%", marginX: 1 }}
+        sx={{ marginY: 1, width: "87%", maxWidth: "400px", color: "primary" }}
         value={details.password.value}
         label="Password"
         type={details.password.show ? "text" : "password"}
@@ -156,7 +179,7 @@ export const Register = ({ boxStyles }) => {
         }}
       />
       <TextField
-        sx={{ marginY: 1, width: "42.5%", marginX: 1 }}
+        sx={{ marginY: 1, width: "87%", maxWidth: "400px", color: "primary" }}
         value={details.confirmPassword.value}
         label="Confirm Password"
         type={details.confirmPassword.show ? "text" : "password"}
@@ -195,40 +218,64 @@ export const Register = ({ boxStyles }) => {
         }}
       />
 
-      <Box sx={{ position: "relative" }}>
-        <Button
-          variant="contained"
-          onClick={handleRegister}
-          sx={{ marginY: 1, width: "87%" }}
-          disabled={registerLoading}
-        >
-          Register
-        </Button>
-        {registerLoading && (
-          <CircularProgress
-            size={24}
-            sx={{
-              color: "primary",
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              marginTop: "-12px",
-              marginLeft: "-12px",
-            }}
-          />
-        )}
-      </Box>
-
-      <Button
-        sx={{ marginY: 1, width: "87%" }}
-        onClick={() => navigate("/login")}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
+          alignItems: { xs: "center", sm: "flex-start" },
+          justifyContent: { xs: "center", md: "center" },
+        }}
       >
-        Existing User? Login Here
-      </Button>
+        <Box
+          sx={{
+            position: "relative",
+            width: "inherit",
+            display: { xs: "flex", sm: "block" },
+            justifyContent: "center",
+          }}
+        >
+          <Button
+            variant="contained"
+            onClick={handleRegisterHouse}
+            sx={{
+              marginY: 1,
+              width: "87%",
+              maxWidth: "400px",
+              color: "primary",
+            }}
+            disabled={registerLoading}
+          >
+            Register
+          </Button>
+          {registerLoading && (
+            <CircularProgress
+              size={24}
+              sx={{
+                color: "primary",
+                position: "absolute",
+                top: "50%",
+                left: { xs: "50%", sm: "200px" },
+                marginTop: "-12px",
+                marginLeft: "-12px",
+              }}
+            />
+          )}
+        </Box>
+
+        <Button
+          sx={{
+            marginTop: { xs: 0.5, sm: 0.5, md: 1 },
+            width: "87%",
+            maxWidth: "400px",
+            color: "primary",
+          }}
+          onClick={() => navigate("/login")}
+          variant="outlined"
+        >
+          Existing User? Login Here
+        </Button>
+      </Box>
     </Box>
   );
-};
-
-Register.propTypes = {
-  boxStyles: PropTypes.object,
 };

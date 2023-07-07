@@ -9,12 +9,12 @@ import {
 import { PropTypes } from "prop-types";
 import { useState } from "react";
 import { useContext } from "react";
-import { UserContext } from "../../context/userContext";
+import { UserContext } from "../context/userContext";
 import axios from "axios";
-import { url } from "../../assets/res";
-import { Timer } from "../misc/Timer";
+import { url } from "../assets/res";
+import { Timer } from "./misc/Timer";
 import { useNavigate } from "react-router-dom";
-import { AlertDialog } from "../misc/AlertDialog";
+import { AlertDialog } from "./misc/AlertDialog";
 
 export const VerifyEmail = ({ justAfterRegister = false }) => {
   const userContext = useContext(UserContext);

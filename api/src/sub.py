@@ -1,5 +1,3 @@
-from user import User
-from db import connect, disconnect
 from datetime import datetime
 from fastapi import HTTPException
 from house import House
@@ -24,10 +22,7 @@ class Subscription:
         self.days = days
 
     # * inline with new schema
-    async def sync_details(self):
-        connect()
-        from db import con
-
+    async def sync_details(self, con):
         cursor = con.cursor()
 
         query = (
@@ -59,26 +54,21 @@ class Subscription:
             )
             self.active = bool(row[9])
             self.house = House(houseid=row[10])
-            await self.house.sync_details()
+            await self.house.sync_details(con=con)
         except IndexError:
-            disconnect()
+            con.close()
             raise HTTPException(status_code=404, detail="Sub not found")
 
     # * inline with new schema
-    async def could_not_deliver(self, clientDate: datetime):
-        connect()
-        from db import con
-
+    async def could_not_deliver(self, clientDate: datetime, con):
         cursor = con.cursor()
 
         query = f"SELECT not_delivered FROM subs WHERE subid={self.subid}"
         cursor.execute(query)
 
-        try:
-            result = cursor.fetchall()[0][0]
-            not_delivered = eval(result)
-        except:
-            not_delivered = []
+        result = cursor.fetchall()
+        row = result[0]
+        not_delivered = eval(row[0]) if row[0] is not None else []
 
         clientDateInt = intFromDate(clientDate)
         not_delivered.append(clientDateInt)
@@ -87,13 +77,9 @@ class Subscription:
         cursor.execute(query)
 
         con.commit()
-        disconnect()
 
     # * inline with new schema
-    async def activate(self):
-        connect()
-        from db import con
-
+    async def activate(self, con):
         cursor = con.cursor()
 
         query = f"SELECT * FROM subs WHERE houseid={self.house.houseid}"
@@ -102,6 +88,7 @@ class Subscription:
         try:
             result = cursor.fetchall()
             row = result[0]
+            con.close()
             raise HTTPException(
                 status_code=400, detail="Subscription already exists for house"
             )
@@ -111,9 +98,8 @@ class Subscription:
         query = f"INSERT INTO subs (milkids, sub_start, days, sub_end, active, houseid) VALUES ({sqlfyJSON(self.milkids)}, '{self.sub_start.date()}', {sqlfyJSON(self.days)}, '{self.sub_end.date()}', 1, {self.house.houseid})"
         cursor.execute(query)
         con.commit()
-        disconnect()
 
-        await self.sync_details()
+        await self.sync_details(con=con)
         details = {
             "subid": self.subid,
             "milkids": self.milkids,
@@ -132,17 +118,13 @@ class Subscription:
         return details
 
     # * inline with new schema
-    async def pause(self, pause_date: datetime, resume_date: datetime):
-        connect()
-        from db import con
-
+    async def pause(self, pause_date: datetime, resume_date: datetime, con):
         cursor = con.cursor()
         query = f"UPDATE subs SET pause_date='{str(pause_date)}', resume_date='{str(resume_date)}' WHERE subid={self.subid}"
         cursor.execute(query)
         con.commit()
-        disconnect()
 
-        await self.sync_details()
+        await self.sync_details(con=con)
         details = {
             "subid": self.subid,
             "milkids": self.milkids,
@@ -161,17 +143,14 @@ class Subscription:
         return details
 
     # * inline with new schema
-    async def deliver(self, clientDate: datetime):
-        connect()
-        from db import con
-
+    async def deliver(self, clientDate: datetime, con):
         cursor = con.cursor()
 
         cursor.execute(f"SELECT delivered FROM subs WHERE subid={self.subid}")
 
         result = cursor.fetchall()
         row = result[0]
-        delivered = eval(row[0])
+        delivered = eval(row[0]) if row[0] is not None else []
         clientDateInt = intFromDate(clientDate)
         delivered.append(clientDateInt)
 
@@ -180,4 +159,3 @@ class Subscription:
         )
         cursor.execute(query)
         con.commit()
-        disconnect()

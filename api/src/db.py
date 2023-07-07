@@ -1,5 +1,6 @@
 import mysql.connector as connector
 
+
 # host = "bwqwqvenmbwqhzwutgu6-mysql.services.clever-cloud.com"
 # user = "u7bizpwgzah61bgv"
 # database = "bwqwqvenmbwqhzwutgu6"
@@ -10,14 +11,11 @@ user = "root"
 password = "Welcome@2000"
 database = "milk_delivery"
 
-con = None
-
 
 def connect():
-    global con
     con = connector.connect(host=host, user=user, password=password, database=database)
+    return con
 
 
-def disconnect():
-    global con
+def disconnect(con):
     con.close()

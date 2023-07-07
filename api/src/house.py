@@ -1,4 +1,3 @@
-from db import connect, disconnect
 from fastapi import HTTPException
 from user import User
 from misc import sqlfyJSON, dateFromInt
@@ -11,10 +10,7 @@ class House:
         self.houseid = houseid
 
     # * inline with new schema
-    async def sync_details(self):
-        connect()
-        from db import con
-
+    async def sync_details(self, con):
         cursor = con.cursor()
 
         if self.wing and self.houseno:
@@ -27,19 +23,16 @@ class House:
         try:
             result = cursor.fetchall()
             row = result[0]
-            self.houseid = row[0]
+            self.houseid = int(row[0])
             self.wing = row[1]
-            self.houseno = row[2]
+            self.houseno = int(row[2])
             self.members = eval(row[3]) if row[3] is not None else []
         except IndexError:
-            disconnect()
+            con.close()
             raise HTTPException(status_code=404, detail="House not found")
 
     # * inline with new schema
-    async def register(self):
-        connect()
-        from db import con
-
+    async def register(self, con):
         cursor = con.cursor()
 
         query = (
@@ -60,30 +53,27 @@ class House:
         cursor.execute(query)
         con.commit()
 
-        query = (
-            f"SELECT * FROM houses WHERE wing='{self.wing}' AND houseno={self.houseno}"
-        )
-        cursor.execute(query)
+        # query = (
+        #     f"SELECT * FROM houses WHERE wing='{self.wing}' AND houseno={self.houseno}"
+        # )
+        # cursor.execute(query)
 
-        result = cursor.fetchall()
-        row = result[0]
-        details = {
-            "houseid": int(row[0]),
-            "wing": row[1],
-            "houseno": int(row[2]),
-            "members": [int(memberId) for memberId in eval(row[3])]
-            if row[3] is not None
-            else [],
-        }
+        # result = cursor.fetchall()
+        # row = result[0]
+        # details = {
+        #     "houseid": int(row[0]),
+        #     "wing": row[1],
+        #     "houseno": int(row[2]),
+        #     "members": [int(memberId) for memberId in eval(row[3])]
+        #     if row[3] is not None
+        #     else [],
+        # }
 
-        disconnect()
-        return details
+        # disconnect()
+        # return details
 
     # * inline with new schema
-    async def add_member(self, member: User):
-        connect()
-        from db import con
-
+    async def add_member(self, member: User, con):
         cursor = con.cursor()
 
         query = f"SELECT members FROM houses WHERE houseid={self.houseid}"
@@ -91,6 +81,7 @@ class House:
         result = cursor.fetchall()
         members = eval(result[0][0]) if result[0][0] is not None else []
         if member.userid in members:
+            con.close()
             raise HTTPException(
                 status_code=400, detail="Member already exists in house"
             )
@@ -111,29 +102,26 @@ class House:
         cursor.execute(query)
         con.commit()
 
-        query = f"SELECT * FROM users WHERE userid={member.userid}"
-        cursor.execute(query)
-        result = cursor.fetchall()
-        row = result[0]
-        # print(row[6])
-        details = {
-            "id": row[0],
-            "name": row[1],
-            "email": row[2],
-            "phone": row[3],
-            "imgUrl": row[5],
-            "houseids": eval(row[6]),
-            "verified": bool(row[7]),
-        }
+        # query = f"SELECT * FROM users WHERE userid={member.userid}"
+        # cursor.execute(query)
+        # result = cursor.fetchall()
+        # row = result[0]
+        # # print(row[6])
+        # details = {
+        #     "id": row[0],
+        #     "name": row[1],
+        #     "email": row[2],
+        #     "phone": row[3],
+        #     "imgUrl": row[5],
+        #     "houseids": eval(row[6]),
+        #     "verified": bool(row[7]),
+        # }
 
-        disconnect()
-        return details
+        # disconnect()
+        # return details
 
     # * inline with new schema
-    async def delete_member(self, member: User):
-        connect()
-        from db import con
-
+    async def delete_member(self, member: User, con):
         cursor = con.cursor()
 
         query = f"SELECT members FROM houses WHERE houseid={self.houseid}"
@@ -141,7 +129,13 @@ class House:
         result = cursor.fetchall()
         members = eval(result[0][0]) if result[0][0] is not None else []
         if member.userid not in members:
+            con.close()
             raise HTTPException(status_code=404, detail="Member not found in house")
+        elif len(members) == 1:
+            con.close()
+            raise HTTPException(
+                status_code=400, detail="One member must exist in house"
+            )
 
         members.remove(member.userid)
         query = f"UPDATE houses SET members={sqlfyJSON(members)} WHERE houseid={self.houseid}"
@@ -156,6 +150,7 @@ class House:
         # print(result)
         houseids = eval(result[0][0]) if result[0][0] is not None else []
         if self.houseid not in houseids:
+            con.close()
             raise HTTPException(status_code=404, detail="House not found in user")
 
         houseids.remove(self.houseid)
@@ -163,13 +158,8 @@ class House:
         cursor.execute(query)
         con.commit()
 
-        disconnect()
-
     # * inline with new schema
-    async def subs_details(self):
-        connect()
-        from db import con
-
+    async def subs_details(self, con):
         cursor = con.cursor()
 
         cursor.execute(f"SELECT * FROM subs WHERE houseid={self.houseid}")
@@ -202,6 +192,4 @@ class House:
 
         details = {"subs": subs}
         # print(details)
-
-        disconnect()
         return details

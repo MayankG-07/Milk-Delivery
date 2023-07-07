@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { url } from "./../../assets/res";
+import { url } from "../../assets/res";
 import {
   TextField,
   Button,
@@ -160,7 +160,8 @@ export const Login = () => {
 
     await axios({
       method: "POST",
-      url: `${url}/user/${details.memberId}/send-otp`,
+      url: `${url}/user/send-otp`,
+      params: { userid: details.memberId },
     })
       .then((res) => {
         setOtp((prevOtp) => ({ ...prevOtp, loading: false }));
@@ -201,21 +202,20 @@ export const Login = () => {
     }
 
     otpFormData.append("username", email);
-    otpFormData.append("password", otp.value);
+    otpFormData.append(
+      "password",
+      JSON.stringify({ type: "otp", otp: otp.value })
+    );
     await axios({
       method: "POST",
-      url: `${url}/user/login/otp`,
+      url: `${url}/user/login`,
       data: otpFormData,
       headers: { "Content-Type": "multipart/form-data" },
     })
       .then((res) => {
         setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
-        if (
-          res.data.access_token &&
-          res.data.refresh_token &&
-          res.status === 200
-        ) {
-          login();
+        if (res.data.access_token && res.status === 200) {
+          login(res.data.access_token);
           return;
         }
       })
@@ -253,22 +253,21 @@ export const Login = () => {
     }
 
     passwordFormData.append("username", email);
-    passwordFormData.append("password", details.password.value);
+    passwordFormData.append(
+      "password",
+      JSON.stringify({ type: "password", password: details.password.value })
+    );
     await axios({
       method: "POST",
-      url: `${url}/user/login/password`,
+      url: `${url}/user/login`,
       data: passwordFormData,
       headers: { "Content-Type": "multipart/form-data" },
     })
       .then((res) => {
         setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
 
-        if (
-          res.status === 200 &&
-          res.data.access_token &&
-          res.data.refresh_token
-        ) {
-          login();
+        if (res.status === 200 && res.data.access_token) {
+          login(res.data.access_token);
           return;
         }
       })
@@ -287,9 +286,10 @@ export const Login = () => {
       });
   };
 
-  const login = async () => {
+  const login = async (access_token) => {
     // TODO login redirect code goes here
     console.log("Logged in successfully");
+    console.log(access_token);
   };
 
   return (
@@ -617,7 +617,7 @@ export const Login = () => {
             maxWidth: "400px",
             color: "primary",
           }}
-          onClick={() => navigate("/register")}
+          onClick={() => navigate("/register/user")}
         >
           New User? Register Here
         </Button>

@@ -1,5 +1,5 @@
 import { Box, Typography, Divider } from "@mui/material";
-import { Sub } from "./Sub";
+import { Sub } from "../Sub";
 import { useState } from "react";
 import { Loader } from "../misc/Loader";
 

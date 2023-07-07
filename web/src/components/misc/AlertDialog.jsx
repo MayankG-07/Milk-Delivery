@@ -55,6 +55,8 @@ export const AlertDialog = ({
                     }
                   : () => {
                       item.onclick();
+                      dialogOpen = false;
+                      setStateDialogOpen(false);
                       onClose();
                     }
               }

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { images, milk_types, url } from "../../assets/res";
+import { images, milk_types, url } from "../assets/res";
 import { useEffect, useState } from "react";
 import {
   Divider,

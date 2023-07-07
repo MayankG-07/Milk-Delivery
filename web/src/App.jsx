@@ -1,15 +1,16 @@
 import { Routes, Route } from "react-router-dom";
 import "./App.css";
-import Home from "./components/home/Home";
+import { Home } from "./components/pages/Home.page";
 // import { Test } from "./components/misc/Test";
-import { NotFound404 } from "./components/misc/404";
-import { Login } from "./components/home/Login";
-import { Register } from "./components/home/Register";
+import { NotFound404 } from "./components/pages/404.page";
+import { Login } from "./components/pages/Login.page";
+import { RegisterHouse } from "./components/pages/RegisterHouse.page";
 import { CssBaseline } from "@mui/material";
-import { Dashboard } from "./components/dashboard/Dashboard";
+import { Dashboard } from "./components/pages/Dashboard.page";
 import { Navbar } from "./components/misc/Navbar";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { VerifyEmail } from "./components/home/VerifyEmail";
+import { VerifyEmail } from "./components/VerifyEmail";
+import { RegisterUser } from "./components/pages/RegisterUser.page";
 
 const darkTheme = createTheme({
   palette: {
@@ -28,7 +29,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="home" element={<Home />} />
         <Route path="login" element={<Login />} />
-        <Route path="register" element={<Register />} />
+        <Route path="register/user" element={<RegisterUser />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="verify" element={<VerifyEmail />} />
         <Route path="*" element={<NotFound404 />} />

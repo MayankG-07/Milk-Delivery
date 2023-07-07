@@ -1,5 +1,4 @@
 from utils import Password, create_access_token
-from db import connect, disconnect
 from fastapi import HTTPException
 
 
@@ -27,17 +26,18 @@ class User:
         self.otp = Password(value=str(otp)) if otp is not None else None
 
     # * inline with new schema
-    async def sync_details(self):
-        connect()
-        from db import con
-
+    async def sync_details(self, con):
         cursor = con.cursor()
 
-        query = (
-            f"SELECT * FROM users WHERE userid={self.userid}"
-            if self.userid is not None
-            else f"SELECT * FROM users WHERE email='{self.email}'"
-        )
+        if self.userid is not None:
+            query = f"SELECT * FROM users WHERE userid={self.userid}"
+        elif self.email is not None:
+            query = f"SELECT * FROM users WHERE email='{self.email}'"
+        elif self.phone is not None:
+            query = f"SELECT * FROM users WHERE phone='{self.phone}'"
+        else:
+            con.close()
+            raise HTTPException(status_code=400, detail="Invalid data")
 
         cursor.execute(query)
 
@@ -45,30 +45,26 @@ class User:
             result = cursor.fetchall()
             row = result[0]
         except IndexError:
-            disconnect()
+            con.close()
             raise HTTPException(status_code=404, detail="User not found")
-
-        disconnect()
 
         self.userid = row[0]
         self.name = row[1]
         self.email = row[2]
         self.phone = row[3]
         self.imgUrl = row[5]
-        self.houseids = eval(row[6]) if row[6] is not None else None
+        self.houseids = eval(row[6]) if row[6] is not None else []
         self.verified = bool(row[7])
 
     # * inline with new schema
-    async def register(self):
-        connect()
-        from db import con
-
+    async def register(self, con):
         cursor = con.cursor()
 
         cursor.execute(f"SELECT * FROM users WHERE email='{self.email}'")
         try:
             result = cursor.fetchall()
             row = result[0]
+            con.close()
             raise HTTPException(
                 status_code=400, detail="User with email already exists"
             )
@@ -79,6 +75,7 @@ class User:
         try:
             result = cursor.fetchall()
             row = result[0]
+            con.close()
             raise HTTPException(
                 status_code=400, detail="User with phone already exists"
             )
@@ -107,14 +104,10 @@ class User:
             "verified": bool(row[7]),
         }
 
-        disconnect()
         return details
 
     # * inline with new schema
-    async def loginPassword(self):
-        connect()
-        from db import con
-
+    async def loginPassword(self, con):
         cursor = con.cursor()
 
         cursor.execute(f"SELECT password FROM users WHERE userid='{self.userid}'")
@@ -122,8 +115,8 @@ class User:
         req_pwd = result[0][0]
 
         self.password.hashed = req_pwd
-        disconnect()
         if not self.password.verify_password():
+            con.close()
             raise HTTPException(status_code=400, detail="Invalid password")
 
         return {
@@ -134,10 +127,7 @@ class User:
         }
 
     # * inline with new schema
-    async def loginOtp(self):
-        connect()
-        from db import con
-
+    async def loginOtp(self, con):
         cursor = con.cursor()
 
         cursor.execute(f"SELECT otp, otpGenTime FROM users WHERE userid={self.userid}")
@@ -146,7 +136,7 @@ class User:
             row = result[0]
             req_otp, otpGenTime = row[0], row[1]
         except IndexError:
-            disconnect()
+            con.close()
             raise HTTPException(status_code=400, detail="Invalid OTP")
 
         cursor.execute(
@@ -159,11 +149,11 @@ class User:
             req_otp = row[0]
             self.otp.hashed = req_otp
         except IndexError:
-            disconnect()
+            con.close()
             raise HTTPException(status_code=400, detail="Invalid OTP")
 
         if not self.otp.verify_password():
-            disconnect()
+            con.close()
             raise HTTPException(status_code=400, detail="Invalid OTP")
 
         cursor.execute(
@@ -171,7 +161,6 @@ class User:
         )
         con.commit()
 
-        disconnect()
         return {
             "access_token": create_access_token(
                 {"userid": self.userid, "login_type": "otp"}
@@ -180,13 +169,7 @@ class User:
         }
 
     # * inline with new schema
-    async def verify_email(self):
-        connect()
-        from db import con
-
+    async def verify_email(self, con):
         cursor = con.cursor()
-
         cursor.execute(f"UPDATE users SET verified=1 WHERE userid={self.userid}")
-
         con.commit()
-        disconnect()

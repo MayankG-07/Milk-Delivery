@@ -21,7 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { UserContext } from "../../context/userContext";
 
-const drawerWidth = 240;
+const drawerWidth = 250;
 // const navItems = ["Home", "Login"];
 // const paths = ["/home", "/login"];
 
@@ -118,17 +118,24 @@ export const Navbar = (props) => {
         ) : (
           <></>
         )}
-        {!loggedIn ? (
+        {loggedIn ? (
           <ListItem disablePadding>
             <ListItemButton
               sx={{ textAlign: "center" }}
-              onClick={() => navigate("/register")}
+              onClick={() => navigate("register/house")}
             >
-              <ListItemText primary="Register" />
+              <ListItemText primary="Register House" />
             </ListItemButton>
           </ListItem>
         ) : (
-          <></>
+          <ListItem disablePadding>
+            <ListItemButton
+              sx={{ textAlign: "center" }}
+              onClick={() => navigate("register/user")}
+            >
+              <ListItemText primary="Register User" />
+            </ListItemButton>
+          </ListItem>
         )}
       </List>
     </Box>
@@ -151,20 +158,26 @@ export const Navbar = (props) => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{
-              display: { xs: "none", sm: "block" },
-              marginLeft: { md: "10%", sm: "5%" },
-            }}
-          >
-            Milk Delivery
-          </Typography>
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{
+                display: { xs: "none", sm: "block" },
+                ml: 4,
+                mr: 3,
+              }}
+            >
+              Milk Delivery
+            </Typography>
+          </Box>
           <Box
             sx={{
               display: { xs: "none", sm: "block" },
-              marginLeft: { md: "55%", sm: "45%" },
+              mt: 0.5,
+              mr: "5%",
+              flexGrow: 0,
+              // alignItems: "flex-end",
             }}
           >
             {!loggedIn ? (
@@ -181,15 +194,20 @@ export const Navbar = (props) => {
             ) : (
               <></>
             )}
-            {!loggedIn ? (
+            {loggedIn ? (
               <Button
                 sx={{ color: "#fff" }}
-                onClick={() => navigate("/register")}
+                onClick={() => navigate("register/house")}
               >
-                Register
+                Register House
               </Button>
             ) : (
-              <></>
+              <Button
+                sx={{ color: "#fff" }}
+                onClick={() => navigate("register/user")}
+              >
+                Register User
+              </Button>
             )}
             {loggedIn ? (
               <Button

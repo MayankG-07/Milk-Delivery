@@ -11,21 +11,21 @@ from utils import get_current_user
 # * inline with new schema
 @app.post("/user/verify-email", summary="Verify email of user", status_code=204)
 async def verify_email(token_data=Depends(get_current_user)):
-    userid = token_data.get("userid")
+    con = connect()
+    userid: int = token_data.get("userid")
     user = User(userid=userid)
-    await user.sync_details()
+    await user.sync_details(con=con)
 
-    await user.verify_email()
+    await user.verify_email(con=con)
+    disconnect(con)
 
 
 # * inline with new schema
 @app.post("/user/send-otp", summary="Send OTP to user", status_code=204)
 async def get_otp(token_data=Depends(get_current_user)):
-    connect()
-    from db import con
-
+    con = connect()
     cursor = con.cursor()
-    userid = token_data.get("userid")
+    userid: int = token_data.get("userid")
     cursor.execute(f"SELECT * FROM users WHERE userid={userid}")
 
     result = cursor.fetchall()
@@ -33,36 +33,38 @@ async def get_otp(token_data=Depends(get_current_user)):
         row = result[0]
         email = row[0]
     except IndexError:
-        disconnect()
+        disconnect(con)
         raise HTTPException(status_code=400, detail="Invalid userid")
 
-    disconnect()
-
     user = User(userid=userid)
-    await user.sync_details()
-    otp = OTP(user)
+    await user.sync_details(con=con)
+    otp = OTP(user, con=con)
     await otp.send()
+    disconnect(con)
 
 
 # * inline with new schema
-@app.post("/user/login", summary="Login by password", status_code=200)
-async def login_with_password(params: OAuth2PasswordRequestForm = Depends()):
+@app.post("/user/login", summary="Login", status_code=200)
+async def login(params: OAuth2PasswordRequestForm = Depends()):
+    con = connect()
     email = params.username
     data = eval(params.password)
     login_type = data.get("type")
     if login_type == "password":
         password = data.get("password")
         user = User(email=email, password=password)
-        await user.sync_details()
-        details = await user.loginPassword()
+        await user.sync_details(con=con)
+        details = await user.loginPassword(con=con)
     elif login_type == "otp":
         otp = data.get("otp")
         user = User(email=email, otp=otp)
-        await user.sync_details()
-        details = await user.loginOtp()
+        await user.sync_details(con=con)
+        details = await user.loginOtp(con=con)
     else:
+        disconnect(con)
         raise HTTPException(status_code=400, detail="Invalid data")
 
+    disconnect(con)
     return details
 
 
@@ -80,6 +82,7 @@ async def login_with_password(params: OAuth2PasswordRequestForm = Depends()):
 # * inline with new schema
 @app.post("/user/register", summary="Create a new user", status_code=201)
 async def register(params: RegisterUserParams):
+    con = connect()
     name = params.name
     email = params.email
     phone = params.phone
@@ -87,15 +90,19 @@ async def register(params: RegisterUserParams):
     imgUrl = params.imgUrl
 
     user = User(name=name, email=email, phone=phone, password=password, imgUrl=imgUrl)
-    details = await user.register()
+    details = await user.register(con=con)
 
+    disconnect(con)
     return details
 
 
-@app.get("/user/{userid}/details", summary="Get details of a user", status_code=200)
-async def get_user_details(userid: int):
-    user = User(userid=userid)
-    await user.sync_details()
+@app.get("/user/details", summary="Get details of a user", status_code=200)
+async def get_user_details(
+    userid: int | None = None, email: str | None = None, phone: str | None = None
+):
+    con = connect()
+    user = User(userid=userid, email=email, phone=phone)
+    await user.sync_details(con=con)
     details = {
         "userid": user.userid,
         "name": user.name,
@@ -105,4 +112,5 @@ async def get_user_details(userid: int):
         "houseids": user.houseids,
         "verified": user.verified,
     }
+    disconnect(con)
     return details

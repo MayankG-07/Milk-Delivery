@@ -1,5 +1,3 @@
-from user import User
-from db import connect, disconnect
 from datetime import datetime
 from fastapi import HTTPException
 from sub import Subscription
@@ -24,10 +22,7 @@ class Bill:
         self.house = house
 
     # * inline with new schema
-    async def sync_details(self):
-        connect()
-        from db import con
-
+    async def sync_details(self, con):
         cursor = con.cursor()
 
         query = (
@@ -41,24 +36,20 @@ class Bill:
         try:
             row = result[0]
         except IndexError:
-            disconnect()
+            con.close()
             raise HTTPException(status_code=404, detail="Bill not found")
 
-        disconnect()
         self.billid = int(row[0])
         self.billGenTime = row[1]
         self.billAmt = int(row[2])
         self.paid = bool(row[3])
         self.sub = Subscription(subid=int(row[4]))
-        await self.sub.sync_details()
+        await self.sub.sync_details(con=con)
         self.house = House(houseid=int(row[5]))
-        await self.house.sync_details()
+        await self.house.sync_details(con=con)
 
     # * inline with new schema
-    async def generate(self):
-        connect()
-        from db import con
-
+    async def generate(self, con):
         cursor = con.cursor()
 
         query = f"SELECT milkids, delivered FROM subs WHERE subid={self.sub.subid}"
@@ -81,14 +72,14 @@ class Bill:
             amount += price * times_delivered
 
         if not amount:
+            con.close()
             raise HTTPException(status_code=400, detail="Bill amount is zero")
 
         query = f"INSERT INTO bills (billGenTime, billAmt, paid, subid, houseid) VALUES ('{str(self.billGenTime)}', {amount}, 0, {self.sub.subid}, {self.house.houseid})"
         cursor.execute(query)
         con.commit()
-        disconnect()
 
-        await self.sync_details()
+        await self.sync_details(con=con)
         details = {
             "billid": self.billid,
             "billGenTime": str(self.billGenTime),
@@ -100,13 +91,9 @@ class Bill:
         return details
 
     # * inline with new schema
-    async def pay(self):
-        connect()
-        from db import con
-
+    async def pay(self, con):
         cursor = con.cursor()
 
         query = f"UPDATE bills SET paid=1 WHERE billid={self.billid}"
         cursor.execute(query)
         con.commit()
-        disconnect()

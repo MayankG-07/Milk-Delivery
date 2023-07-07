@@ -12,9 +12,7 @@ from datetime import timedelta
     status_code=200,
 )
 async def get_next_day_delivery_details(clientDate: str):
-    connect()
-    from db import con
-
+    con = connect()
     cursor = con.cursor()
 
     clientNextDate = dateFromString(clientDate) + timedelta(days=1)
@@ -57,16 +55,14 @@ async def get_next_day_delivery_details(clientDate: str):
         )
     ]
 
-    disconnect()
+    disconnect(con)
     return final_details
 
 
 # * inline with new schema
 @app.put("/misc/sql-query", summary="Perform SQL query on database", status_code=200)
 async def query(query: str):
-    connect()
-    from db import con
-
+    con = connect()
     cursor = con.cursor()
 
     try:
@@ -78,5 +74,5 @@ async def query(query: str):
             status_code=400, detail={"message": "Invalid query", "error": str(e)}
         )
 
-    disconnect()
+    disconnect(con)
     return {"data": result}
