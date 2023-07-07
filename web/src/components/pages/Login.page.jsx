@@ -102,8 +102,11 @@ export const Login = () => {
           }
           const userid = memberDetails.members[i].id;
           console.log("call for user details", userid);
-          axios
-            .get(`${url}/user/${userid}/details`)
+          axios({
+            method: "GET",
+            url: `${url}/user/details`,
+            params: { userid },
+          })
             .then((res) => {
               setMemberDetails((prevDetails) => ({
                 ...prevDetails,

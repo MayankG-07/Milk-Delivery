@@ -16,11 +16,62 @@ import axios from "axios";
 import { url } from "./../../assets/res";
 import { useNavigate } from "react-router-dom";
 import { AlertDialog } from "../misc/AlertDialog";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { FetchError } from "../../classes/fetchError";
 
 export const RegisterUser = () => {
+  const fetchRegisterUser = async () => {
+    return await axios({
+      method: "POST",
+      url: `${url}/user/register`,
+      data: queries.registerUserQuery.data,
+    }).then((res) => {
+      if (res.status === 201) {
+        return res.data;
+      } else {
+        throw new FetchError(res);
+      }
+    });
+  };
+
   const [pwd, setPwd] = useState({
     password: { value: null, show: false },
     confirmPassword: { value: null, show: false },
+  });
+
+  const queryClient = useQueryClient();
+  const [queries, setQueries] = useState({
+    registerUserQuery: {
+      queryKey: ["/user/register"],
+      enabled: false,
+      data: {
+        name: "",
+        email: "",
+        phone: "",
+        password: "",
+      },
+    },
+  });
+
+  const {
+    isFetching: registerUserQueryIsFetching,
+    // data: registerUserQueryData,
+    isError: registerUserQueryIsError,
+    // error: registerUserQueryError,
+    isSuccess: registerUserQueryIsSuccess,
+  } = useQuery({
+    queryKey: queries.registerUserQuery.queryKey,
+    queryFn: fetchRegisterUser,
+    enabled: queries.registerUserQuery.enabled,
+    refetchOnWindowFocus: false,
+    onError: (err) => {
+      console.log(err.response?.status);
+      console.log(err.response?.data.detail);
+      // setError("errorBlock", {
+      //   type: "api-error",
+      //   message: JSON.stringify(err.data),
+      // });
+    },
   });
 
   const navigate = useNavigate();
@@ -33,33 +84,22 @@ export const RegisterUser = () => {
       errors,
       isValid,
       isSubmitting,
-      isSubmitted,
-      isSubmitSuccessful,
+      // isSubmitted,
+      // isSubmitSuccessful,
     },
-    setError,
+    // setError,
     reset,
   } = useForm({ mode: "onChange" });
 
   const onSubmit = async (formData) => {
-    console.log(formData);
-    await axios({
-      method: "POST",
-      url: `${url}/user/register`,
-      data: {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password,
+    setQueries((prevQueries) => ({
+      ...prevQueries,
+      registerUserQuery: {
+        ...prevQueries.registerUserQuery,
+        enabled: true,
+        data: formData,
       },
-    })
-      .then((res) => {
-        return res.status === 201;
-      })
-      .catch((err) => {
-        console.log(err);
-        setError("errorBlock", { type: "api-error", message: err.message });
-        return false;
-      });
+    }));
   };
 
   return (
@@ -315,7 +355,6 @@ export const RegisterUser = () => {
               >
                 <Button
                   variant="contained"
-                  // onClick={handleRegisterHouse}
                   type="submit"
                   sx={{
                     marginY: 1,
@@ -326,12 +365,13 @@ export const RegisterUser = () => {
                   disabled={
                     isSubmitting ||
                     !isValid ||
-                    pwd.password.value !== pwd.confirmPassword.value
+                    pwd.password.value !== pwd.confirmPassword.value ||
+                    registerUserQueryIsFetching
                   }
                 >
                   Register
                 </Button>
-                {isSubmitting && (
+                {isSubmitting || registerUserQueryIsFetching ? (
                   <CircularProgress
                     size={24}
                     sx={{
@@ -343,6 +383,8 @@ export const RegisterUser = () => {
                       marginLeft: "-12px",
                     }}
                   />
+                ) : (
+                  <></>
                 )}
               </Box>
 
@@ -363,10 +405,8 @@ export const RegisterUser = () => {
         </form>
       </Box>
 
-      <DevTool control={control} />
-
       <AlertDialog
-        open={isSubmitSuccessful}
+        open={registerUserQueryIsSuccess}
         title="Sign Up Successful"
         content={
           <Typography variant="body2">
@@ -382,11 +422,19 @@ export const RegisterUser = () => {
             onclick: "closeDialog",
           },
         ]}
-        onClose={() => navigate("/login")}
+        onClose={() => {
+          // window.location.reload();
+          // setRegistered(true);
+          queryClient.removeQueries({
+            queryKey: queries.registerUserQuery.queryKey,
+            exact: true,
+          });
+          navigate("/login");
+        }}
       />
 
       <AlertDialog
-        open={isSubmitted && !isSubmitSuccessful}
+        open={registerUserQueryIsError}
         title="Sign Up Failed"
         content={
           <Typography variant="body2">
@@ -404,17 +452,29 @@ export const RegisterUser = () => {
                 password: { value: null, show: false },
                 confirmPassword: { value: null, show: false },
               });
-              window.location.reload();
+              setQueries((prevQueries) => ({
+                ...prevQueries,
+                registerUserQuery: {
+                  ...prevQueries.registerUserQuery,
+                  enabled: false,
+                  data: { name: "", email: "", phone: "", password: "" },
+                },
+                validateEmailQuery: {
+                  ...prevQueries.validateEmailQuery,
+                  enabled: false,
+                  params: { email: "" },
+                },
+              }));
+              queryClient.removeQueries({
+                queryKey: queries.registerUserQuery.queryKey,
+                exact: true,
+              });
             },
           },
         ]}
       />
 
-      <input
-        type="text"
-        style={{ display: "none" }}
-        {...formRegister("errorBlock")}
-      />
+      <DevTool control={control} />
     </>
   );
 };

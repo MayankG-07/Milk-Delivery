@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "*",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@fontsource/roboto": "^5.0.3",
     "@mui/icons-material": "^5.11.16",
     "@mui/material": "^5.13.6",
+    "@tanstack/react-query": "^4.29.19",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -17,7 +17,6 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.45.1",
-    "react-query": "^3.39.3",
     "react-router-dom": "^6.14.1",
     "react-scripts": "5.0.1",
     "react-timer-hook": "^3.0.6",
@@ -48,6 +47,8 @@
     ]
   },
   "devDependencies": {
-    "@hookform/devtools": "^4.3.1"
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@hookform/devtools": "^4.3.1",
+    "@tanstack/eslint-plugin-query": "^4.29.9"
   }
 }
