@@ -4,7 +4,7 @@ import { Home } from "./components/pages/Home.page";
 // import { Test } from "./components/misc/Test";
 import { NotFound404 } from "./components/pages/404.page";
 import { Login } from "./components/pages/Login.page";
-// import { RegisterHouse } from "./components/pages/RegisterHouse.page";
+import { RegisterHouse } from "./components/pages/RegisterHouse.page";
 import { CssBaseline } from "@mui/material";
 import { Dashboard } from "./components/pages/Dashboard.page";
 import { Navbar } from "./components/misc/Navbar";
@@ -34,6 +34,7 @@ const App = () => {
           <Route path="home" element={<Home />} />
           <Route path="login" element={<Login />} />
           <Route path="register/user" element={<RegisterUser />} />
+          <Route path="register/house" element={<RegisterHouse />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="verify" element={<VerifyEmail />} />
           <Route path="*" element={<NotFound404 />} />
