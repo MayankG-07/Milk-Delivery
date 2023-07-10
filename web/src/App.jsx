@@ -1,7 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import "./App.css";
 import { Home } from "./components/pages/Home.page";
-// import { Test } from "./components/misc/Test";
 import { NotFound404 } from "./components/pages/404.page";
 import { Login } from "./components/pages/Login.page";
 import { RegisterHouse } from "./components/pages/RegisterHouse.page";

@@ -1,5 +1,6 @@
 const urls = {
   iitgn: "http://10.7.17.177:8000",
+  home: "http://192.168.1.10:8000",
 };
 
 export const images = {
@@ -11,4 +12,5 @@ export const milk_types = {
   FULL_CREAM: "Full Cream",
 };
 
-export const url = urls.iitgn;
+// export const url = urls.iitgn;
+export const url = urls.home;

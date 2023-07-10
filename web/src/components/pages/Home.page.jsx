@@ -1,18 +1,16 @@
-// import { Register } from "./Register";
 import { Box } from "@mui/material";
-// import { useState } from "react";
-// import { VerifyEmail } from "./VerifyEmail";
-import { useContext } from "react";
-import { UserContext } from "../../context/userContext";
-// import { Dashboard } from "../dashboard/Dashboard";
-// import { useNavigate } from "react-router-dom";
-// import { useEffect } from "react";
 
 export const Home = () => {
-  const userContext = useContext(UserContext);
-  const { userDetails } = userContext;
-  // const navigate = useNavigate();
-
-  // console.log(userDetails, userDetails.length);
-  return <>{userDetails.userid === null ? <Box>Home</Box> : <></>}</>;
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        mt: 10,
+      }}
+    >
+      <h1>Home</h1>
+    </Box>
+  );
 };

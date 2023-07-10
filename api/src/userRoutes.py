@@ -22,10 +22,9 @@ async def verify_email(token_data=Depends(get_current_user)):
 
 # * inline with new schema
 @app.post("/user/send-otp", summary="Send OTP to user", status_code=204)
-async def get_otp(token_data=Depends(get_current_user)):
+async def get_otp(userid: int):
     con = connect()
     cursor = con.cursor()
-    userid: int = token_data.get("userid")
     cursor.execute(f"SELECT * FROM users WHERE userid={userid}")
 
     result = cursor.fetchall()
@@ -47,17 +46,21 @@ async def get_otp(token_data=Depends(get_current_user)):
 @app.post("/user/login", summary="Login", status_code=200)
 async def login(params: OAuth2PasswordRequestForm = Depends()):
     con = connect()
-    email = params.username
-    data = eval(params.password)
+    try:
+        userid = int(params.username)
+        data = eval(params.password)
+    except:
+        disconnect(con)
+        raise HTTPException(status_code=400, detail="Invalid data")
     login_type = data.get("type")
     if login_type == "password":
         password = data.get("password")
-        user = User(email=email, password=password)
+        user = User(userid=userid, password=password)
         await user.sync_details(con=con)
         details = await user.loginPassword(con=con)
     elif login_type == "otp":
         otp = data.get("otp")
-        user = User(email=email, otp=otp)
+        user = User(userid=userid, otp=otp)
         await user.sync_details(con=con)
         details = await user.loginOtp(con=con)
     else:

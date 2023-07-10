@@ -17,7 +17,7 @@ import { url } from "./../../assets/res";
 import { useNavigate } from "react-router-dom";
 import { AlertDialog } from "../misc/AlertDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FetchError } from "../../classes/fetchError";
+import { FetchError } from "../../errors/fetchError";
 
 export const RegisterUser = () => {
   const fetchRegisterUser = async () => {

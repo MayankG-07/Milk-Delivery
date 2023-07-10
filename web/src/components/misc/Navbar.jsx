@@ -18,8 +18,6 @@ import {
 
 import MenuIcon from "@mui/icons-material/Menu";
 import { useNavigate } from "react-router-dom";
-import { useContext } from "react";
-import { UserContext } from "../../context/userContext";
 
 const drawerWidth = 250;
 // const navItems = ["Home", "Login"];
@@ -31,9 +29,9 @@ export const Navbar = (props) => {
 
   const navigate = useNavigate();
 
-  const userContext = useContext(UserContext);
-  const { userDetails, handleDetailsChange } = userContext;
-  const loggedIn = !(userDetails.userid === null);
+  const loggedIn =
+    localStorage.getItem("milk-delivery-user") !== undefined &&
+    localStorage.getItem("milk-delivery-user") !== null;
   // console.log(userDetails);
   // console.log(loggedIn);
   // const verified = loggedIn ? userDetails.verified : null;
@@ -96,7 +94,7 @@ export const Navbar = (props) => {
             <ListItemButton
               sx={{ textAlign: "center" }}
               onClick={() => {
-                handleDetailsChange({ userid: null });
+                localStorage.removeItem("milk-delivery-user");
                 navigate("/home");
               }}
             >
@@ -213,7 +211,7 @@ export const Navbar = (props) => {
               <Button
                 sx={{ color: "#fff" }}
                 onClick={() => {
-                  handleDetailsChange({ userid: null });
+                  localStorage.removeItem("milk-delivery-user");
                   navigate("/home");
                 }}
               >
