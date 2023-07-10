@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import PropTypes from "prop-types";
 import {
   AppBar,
@@ -18,6 +18,7 @@ import {
 
 import MenuIcon from "@mui/icons-material/Menu";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./../../context/userContext";
 
 const drawerWidth = 250;
 // const navItems = ["Home", "Login"];
@@ -29,9 +30,13 @@ export const Navbar = (props) => {
 
   const navigate = useNavigate();
 
+  const { userDetails, fetchNewUserDetails, verifyTokenData } =
+    useContext(UserContext);
+
+  console.log(userDetails);
   const loggedIn =
-    localStorage.getItem("milk-delivery-user") !== undefined &&
-    localStorage.getItem("milk-delivery-user") !== null;
+    userDetails !== null && userDetails !== undefined && verifyTokenData();
+
   // console.log(userDetails);
   // console.log(loggedIn);
   // const verified = loggedIn ? userDetails.verified : null;
@@ -94,7 +99,7 @@ export const Navbar = (props) => {
             <ListItemButton
               sx={{ textAlign: "center" }}
               onClick={() => {
-                localStorage.removeItem("milk-delivery-user");
+                fetchNewUserDetails({ logout: true });
                 navigate("/home");
               }}
             >
@@ -211,7 +216,7 @@ export const Navbar = (props) => {
               <Button
                 sx={{ color: "#fff" }}
                 onClick={() => {
-                  localStorage.removeItem("milk-delivery-user");
+                  fetchNewUserDetails({ logout: true });
                   navigate("/home");
                 }}
               >

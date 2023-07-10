@@ -3,6 +3,7 @@ from db import connect, disconnect
 from fastapi import HTTPException
 from misc import dateFromInt, dateFromString
 from datetime import timedelta
+from utils import get_current_user
 
 
 # * in line with new schema
@@ -76,3 +77,9 @@ async def query(query: str):
 
     disconnect(con)
     return {"data": result}
+
+
+@app.get("/misc/verify-token")
+async def verify_token(token: str):
+    userid = get_current_user(token)
+    return {"userid": userid}

@@ -11,6 +11,7 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { VerifyEmail } from "./components/VerifyEmail";
 import { RegisterUser } from "./components/pages/RegisterUser.page";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { UserContextProvider } from "./context/userContext";
 
 const darkTheme = createTheme({
   palette: {
@@ -26,18 +27,20 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={darkTheme}>
-        <CssBaseline />
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="home" element={<Home />} />
-          <Route path="login" element={<Login />} />
-          <Route path="register/user" element={<RegisterUser />} />
-          <Route path="register/house" element={<RegisterHouse />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="verify" element={<VerifyEmail />} />
-          <Route path="*" element={<NotFound404 />} />
-        </Routes>
+        <UserContextProvider>
+          <CssBaseline />
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="home" element={<Home />} />
+            <Route path="login" element={<Login />} />
+            <Route path="register/user" element={<RegisterUser />} />
+            <Route path="register/house" element={<RegisterHouse />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="verify" element={<VerifyEmail />} />
+            <Route path="*" element={<NotFound404 />} />
+          </Routes>
+        </UserContextProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

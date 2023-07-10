@@ -74,12 +74,6 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     return userid
 
 
-@app.get("/test/verify-token")
-async def verify_token(token: str):
-    userid = await get_current_user(token)
-    return {"userid": userid}
-
-
 # def create_refresh_token(subject: Union[str, Any], expires_delta: int = None):
 #     if expires_delta is not None:
 #         expires_delta = datetime.utcnow() + expires_delta

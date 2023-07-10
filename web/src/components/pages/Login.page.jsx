@@ -19,7 +19,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Timer } from "../misc/Timer";
@@ -27,8 +27,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { url } from "../../assets/res";
 import { AlertDialog } from "../misc/AlertDialog";
+import { UserContext } from "../../context/userContext";
 
 export const Login = () => {
+  const { userDetails, fetchNewUserDetails } = useContext(UserContext);
+
   const [wing, setWing] = useState(null);
   const [houseno, setHouseno] = useState(null);
   const [userId, setUserId] = useState(null);
@@ -242,7 +245,8 @@ export const Login = () => {
       retry: false,
       onError: (err) => console.log(err),
       onSuccess: (res) => {
-        localStorage.setItem("milk-delivery-user", JSON.stringify(res.data));
+        console.log(res.data);
+        fetchNewUserDetails(res.data);
         navigate("/dashboard");
       },
     }),

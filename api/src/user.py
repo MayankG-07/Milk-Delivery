@@ -120,10 +120,13 @@ class User:
             raise HTTPException(status_code=400, detail="Invalid password")
 
         return {
-            "access_token": create_access_token(
-                {"userid": self.userid, "login_type": "password"}
-            ),
-            "token_type": "bearer",
+            "userid": self.userid,
+            "token_data": {
+                "access_token": create_access_token(
+                    {"userid": self.userid, "login_type": "password"}
+                ),
+                "token_type": "bearer",
+            },
         }
 
     # * inline with new schema
@@ -162,10 +165,13 @@ class User:
         con.commit()
 
         return {
-            "access_token": create_access_token(
-                {"userid": self.userid, "login_type": "otp"}
-            ),
-            "token_type": "bearer",
+            "userid": self.userid,
+            "token_data": {
+                "access_token": create_access_token(
+                    {"userid": self.userid, "login_type": "otp"}
+                ),
+                "token_type": "bearer",
+            },
         }
 
     # * inline with new schema
