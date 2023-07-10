@@ -306,10 +306,15 @@ async def pay_bill(
 
 
 # * inline with new schema
-@app.get("/house/{houseid}/details", summary="View details of a house", status_code=200)
-async def get_house_details(houseid: int):
+@app.get("/house/details", summary="View details of a house", status_code=200)
+async def get_house_details(
+    houseid: int | None = None, wing: str | None = None, houseno: int | None = None
+):
+    if (houseid is None) and ((wing is None) or (houseno is None)):
+        raise HTTPException(status_code=400, detail="Invalid data")
+
     con = connect()
-    house = House(houseid=houseid)
+    house = House(houseid=houseid, wing=wing, houseno=houseno)
     await house.sync_details(con=con)
     details = {
         "houseid": house.houseid,

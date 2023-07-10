@@ -1,630 +1,673 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
-import { url } from "../../assets/res";
+/* eslint-disable no-unused-vars */
+// import { DevTool } from "@hookform/devtools";
 import {
-  TextField,
-  Button,
   Box,
   Typography,
   Divider,
-  InputAdornment,
-  IconButton,
   FormControl,
   RadioGroup,
   FormControlLabel,
   Radio,
-  Chip,
-  CircularProgress,
+  TextField,
   InputLabel,
   Select,
   MenuItem,
+  InputAdornment,
+  IconButton,
+  Button,
+  Chip,
+  CircularProgress,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { Timer } from "../misc/Timer";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { Timer } from "../misc/Timer";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { url } from "../../assets/res";
+import { AlertDialog } from "../misc/AlertDialog";
 
 export const Login = () => {
-  const [details, setDetails] = useState({
-    houseid: null,
-    wing: null,
-    houseno: null,
-    memberId: null,
-    password: { value: null, show: false },
-  });
-
-  const [memberDetails, setMemberDetails] = useState({
-    loading: false,
-    members: [],
-    called: false,
-  });
-
-  useEffect(() => {
-    // get house id from db
-    if (
-      !(details.wing === null) &&
-      !(details.houseno === null) &&
-      details.houseid === null
-    ) {
-      axios
-        .put(`${url}/misc/sql-query`, null, {
-          params: {
-            query: `SELECT houseid FROM houses WHERE wing='${details.wing}' AND houseno=${details.houseno}`,
-          },
-        })
-        .then((res) => {
-          if (!(res.data.data.length === 0)) {
-            const houseid = res.data.data[0][0];
-            setDetails((prevDetails) => ({ ...prevDetails, houseid }));
-          }
-        })
-        .catch((err) => console.log(err));
-    }
-
-    // get members from db
-    if (!(details.houseid === null) && !memberDetails.called) {
-      let called = false;
-      setMemberDetails((prevDetails) => ({
-        ...prevDetails,
-        loading: true,
-      }));
-      axios
-        .get(`${url}/house/${details.houseid}/details`)
-        .then((res) => {
-          const memberIds = res.data.members;
-          let members = [];
-
-          memberIds.forEach((memberId) => {
-            members.push({
-              id: memberId,
-              name: null,
-            });
-          });
-
-          setMemberDetails((prevDetails) => ({
-            ...prevDetails,
-            members,
-          }));
-        })
-        .catch((err) => {
-          console.log(err);
-          setMemberDetails((prevDetails) => ({
-            ...prevDetails,
-            loading: false,
-          }));
-        });
-
-      // getting member names
-      if (memberDetails.loading) {
-        for (let i = 0; i < memberDetails.members.length; i++) {
-          called = true;
-          if (!memberDetails.loading) {
-            break;
-          }
-          const userid = memberDetails.members[i].id;
-          console.log("call for user details", userid);
-          axios({
-            method: "GET",
-            url: `${url}/user/details`,
-            params: { userid },
-          })
-            .then((res) => {
-              setMemberDetails((prevDetails) => ({
-                ...prevDetails,
-                members: prevDetails.members.map((item) =>
-                  item.id === userid
-                    ? {
-                        id: item.id,
-                        name: res.data.name,
-                        email: res.data.email,
-                      }
-                    : item
-                ),
-              }));
-            })
-            .catch((err) => {
-              console.log(err);
-              setMemberDetails((prevDetails) => ({
-                ...prevDetails,
-                loading: false,
-              }));
-            });
-        }
-
-        setMemberDetails((prevDetails) => ({
-          ...prevDetails,
-          loading: false,
-          called,
-        }));
-      }
-    }
-  }, [
-    details.wing,
-    details.houseno,
-    details.houseid,
-    memberDetails.called,
-    memberDetails.loading,
-    memberDetails.members,
-  ]);
-
-  const [otp, setOtp] = useState({
+  const [wing, setWing] = useState(null);
+  const [houseno, setHouseno] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [loginType, setLoginType] = useState("otp");
+  const [showPassword, setShowPassword] = useState(false);
+  const [otpProps, setOtpProps] = useState({
     sent: false,
-    loading: false,
     sendAgain: false,
     time: null,
-    value: null,
   });
-
-  const [loginType, setLoginType] = useState({ loading: false, withOtp: true });
+  const [loginData, setLoginData] = useState(null);
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const handleSendOtp = async () => {
-    setOtp((prevOtp) => ({ ...prevOtp, loading: true }));
+  const {
+    register: formRegister,
+    handleSubmit,
+    // control,
+    formState: {
+      errors,
+      isValid,
+      isSubmitting,
+      isSubmitted,
+      isSubmitSuccessful,
+    },
+    reset: formReset,
+  } = useForm({ mode: "onChange" });
 
-    await axios({
-      method: "POST",
-      url: `${url}/user/send-otp`,
-      params: { userid: details.memberId },
-    })
-      .then((res) => {
-        setOtp((prevOtp) => ({ ...prevOtp, loading: false }));
-
-        if (res.status === 204) {
-          const time = new Date();
-          time.setSeconds(time.getSeconds() + 300);
-
-          setOtp((prevOtp) => ({
-            ...prevOtp,
-            sent: true,
-            sendAgain: false,
-            time,
-          }));
-          return;
+  const [queries, setQueries] = useState({
+    getHouseIdQuery: {
+      queryKey: ["getHouseId"],
+      queryFn: async (wing, houseno) => {
+        return await axios({
+          method: "GET",
+          url: `${url}/house/details`,
+          params: {
+            wing,
+            houseno,
+          },
+        });
+      },
+      resultData: null,
+      enabled: false,
+    },
+    getUserNamesQuery: {
+      queryKey: ["getUserNames"],
+      queryFn: async (userIds) => {
+        let users = [];
+        userIds.forEach((userId) => users.push({ id: userId, name: null }));
+        for (let i = 0; i < users.length; i++) {
+          await axios({
+            method: "GET",
+            url: `${url}/user/details`,
+            params: {
+              userid: users[i].id,
+            },
+          }).then((res) => {
+            users[i].name = res.data.name;
+          });
         }
-      })
-      .catch((error) => {
-        setOtp((prevOtp) => ({ ...prevOtp, loading: false }));
 
-        if (
-          error.response.status === 400 &&
-          error.response.data.detail === "Invalid userid"
-        ) {
-          alert("This member does not exist. Please contact the admin.");
+        return users;
+      },
+      resultData: null,
+      enabled: false,
+    },
+    sendOTPQuery: {
+      queryKey: ["sendOTP"],
+      queryFn: async (userid) => {
+        return await axios({
+          method: "POST",
+          url: `${url}/user/send-otp`,
+          params: { userid },
+        });
+      },
+      resultData: null,
+      enabled: false,
+    },
+    loginQuery: {
+      queryKey: ["login"],
+      queryFn: async (loginData) => {
+        const { userid, otp, password } = loginData;
+
+        let passwordString;
+        if (password === undefined || password === null) {
+          passwordString = JSON.stringify({ type: "otp", otp });
+        } else {
+          passwordString = JSON.stringify({ type: "password", password });
         }
-      });
-  };
 
-  const handleLoginOtp = async () => {
-    setLoginType({ ...loginType, loading: true });
-    var otpFormData = new FormData();
-    let email = "";
-    for (let i = 0; i < memberDetails.members.length; i++) {
-      if (memberDetails.members[i].id === details.memberId) {
-        email = memberDetails.members[i].email;
-      }
-    }
+        let bodyFormData = new FormData();
+        bodyFormData.append("username", userid);
+        bodyFormData.append("password", passwordString);
 
-    otpFormData.append("username", email);
-    otpFormData.append(
-      "password",
-      JSON.stringify({ type: "otp", otp: otp.value })
+        return await axios({
+          method: "POST",
+          url: `${url}/user/login`,
+          data: bodyFormData,
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      },
+      resultData: null,
+      enabled: false,
+    },
+  });
+
+  const [
+    {
+      isFetching: getHouseIdQueryIsFetching,
+      data: getHouseIdQueryData,
+      isError: getHouseIdQueryIsError,
+      error: getHouseIdQueryError,
+      isSuccess: getHouseIdQueryIsSuccess,
+    },
+    {
+      isFetching: getUserNamesQueryIsFetching,
+      data: getUserNamesQueryData,
+      isError: getUserNamesQueryIsError,
+      error: getUserNamesQueryError,
+      isSuccess: getUserNamesQueryIsSuccess,
+    },
+    {
+      isFetching: sendOTPQueryIsFetching,
+      data: sendOTPQueryData,
+      isError: sendOTPQueryIsError,
+      error: sendOTPQueryError,
+      isSuccess: sendOTPQueryIsSuccess,
+    },
+    {
+      isFetching: loginQueryIsFetching,
+      data: loginQueryData,
+      isError: loginQueryIsError,
+      error: loginQueryError,
+      isSuccess: loginQueryIsSuccess,
+    },
+  ] = [
+    useQuery({
+      queryKey: queries.getHouseIdQuery.queryKey,
+      queryFn: async () => await queries.getHouseIdQuery.queryFn(wing, houseno),
+      enabled: queries.getHouseIdQuery.enabled,
+      refetchOnWindowFocus: false,
+      retry: false,
+      onError: (_err) => {
+        setUserId(null);
+        setQueries((prevQueries) => ({
+          ...prevQueries,
+          getUserNamesQuery: {
+            ...prevQueries.getUserNamesQuery,
+            enabled: false,
+          },
+        }));
+        queryClient.removeQueries({
+          queryKey: queries.getUserNamesQuery.queryKey,
+        });
+        setOtpProps({ sent: false, sendAgain: false, time: null });
+      },
+      onSuccess: (_res) => {
+        // setUserIds(res.data.members);
+        setQueries((prevQueries) => ({
+          ...prevQueries,
+          getUserNamesQuery: {
+            ...prevQueries.getUserNamesQuery,
+            enabled: true,
+          },
+        }));
+      },
+    }),
+    useQuery({
+      queryKey: queries.getUserNamesQuery.queryKey,
+      queryFn: async () =>
+        await queries.getUserNamesQuery.queryFn(
+          getHouseIdQueryData?.data?.members
+        ),
+      enabled: queries.getUserNamesQuery.enabled,
+      refetchOnWindowFocus: false,
+      retry: false,
+      onError: (err) => console.log(err),
+    }),
+    useQuery({
+      queryKey: queries.sendOTPQuery.queryKey,
+      queryFn: async () => queries.sendOTPQuery.queryFn(userId),
+      enabled: queries.sendOTPQuery.enabled,
+      refetchOnWindowFocus: false,
+      retry: false,
+      onError: (err) => console.log(err),
+      onSuccess: (_res) => {
+        const time = new Date();
+        time.setSeconds(time.getSeconds() + 300);
+        setOtpProps((prevProps) => ({
+          ...prevProps,
+          sendAgain: false,
+          time,
+          sent: true,
+        }));
+
+        setQueries((prevQueries) => ({
+          ...prevQueries,
+          sendOTPQuery: {
+            ...prevQueries.sendOTPQuery,
+            enabled: false,
+          },
+        }));
+      },
+    }),
+    useQuery({
+      queryKey: queries.loginQuery.queryKey,
+      queryFn: async () => await queries.loginQuery.queryFn(loginData),
+      enabled: queries.loginQuery.enabled,
+      refetchOnWindowFocus: false,
+      retry: false,
+      onError: (err) => console.log(err),
+      onSuccess: (res) => {
+        localStorage.setItem("milk-delivery-user", JSON.stringify(res.data));
+        navigate("/dashboard");
+      },
+    }),
+  ];
+
+  const onSubmit = (formData) => {
+    const { otp, password } = formData;
+    setLoginData(
+      loginType === "otp"
+        ? { userid: userId, otp }
+        : { userid: userId, password }
     );
-    await axios({
-      method: "POST",
-      url: `${url}/user/login`,
-      data: otpFormData,
-      headers: { "Content-Type": "multipart/form-data" },
-    })
-      .then((res) => {
-        setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
-        if (res.data.access_token && res.status === 200) {
-          login(res.data.access_token);
-          return;
-        }
-      })
-      .catch((error) => {
-        setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
-        if (
-          error.response.status === 400 &&
-          error.response.data.detail === "Invalid OTP"
-        ) {
-          alert(
-            "The OTP you entered is invalid. Please check the OTP you have entered."
-          );
-        }
-
-        return;
-      });
-  };
-
-  const handleLoginPassword = async () => {
-    if (details.password.show) {
-      setDetails((prevDetails) => ({
-        ...prevDetails,
-        password: { ...prevDetails.password, show: false },
-      }));
-    }
-
-    setLoginType((prevLoginType) => ({ ...prevLoginType, loading: true }));
-
-    var passwordFormData = new FormData();
-    let email = "";
-    for (let i = 0; i < memberDetails.members.length; i++) {
-      if (memberDetails.members[i].id === details.memberId) {
-        email = memberDetails.members[i].email;
-      }
-    }
-
-    passwordFormData.append("username", email);
-    passwordFormData.append(
-      "password",
-      JSON.stringify({ type: "password", password: details.password.value })
-    );
-    await axios({
-      method: "POST",
-      url: `${url}/user/login`,
-      data: passwordFormData,
-      headers: { "Content-Type": "multipart/form-data" },
-    })
-      .then((res) => {
-        setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
-
-        if (res.status === 200 && res.data.access_token) {
-          login(res.data.access_token);
-          return;
-        }
-      })
-      .catch((error) => {
-        setLoginType((prevLoginType) => ({ ...prevLoginType, loading: false }));
-
-        if (
-          error.response.status === 400 &&
-          error.response.data.detail === "Invalid password"
-        ) {
-          alert(
-            "The house details or password you have entered is/are incorrect. Please check the details or password you have entered."
-          );
-        }
-        return;
-      });
-  };
-
-  const login = async (access_token) => {
-    // TODO login redirect code goes here
-    console.log("Logged in successfully");
-    console.log(access_token);
+    setQueries((prevQueries) => ({
+      ...prevQueries,
+      loginQuery: { ...prevQueries.loginQuery, enabled: true },
+    }));
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: { xs: "center", sm: "flex-start" },
-        marginTop: { xs: "22%", sm: 12 },
-        marginLeft: { sm: 10 },
-      }}
-    >
-      <Typography sx={{ paddingY: 2 }} variant="h5">
-        Login
-      </Typography>
-      <Divider
-        sx={{
-          display: { xs: "flex" },
-          marginBottom: { xs: 0.5, sm: 2 },
-          width: { sx: "80%", sm: "40%" },
-        }}
-      />
-      <Box sx={{ display: "flex", flexDirection: "row", width: "auto" }}>
-        <Typography
-          variant="body1"
-          color="text.primary"
-          sx={{
-            marginTop: 1,
-            marginRight: 1.5,
-          }}
-        >
-          Wing:
-        </Typography>
-        <FormControl disabled={otp.loading} sx={{ marginBottom: 1 }}>
-          <RadioGroup
-            value={details.wing ? details.wing : ""}
-            onChange={(_event, newValue) => {
-              setDetails((prevDetails) => ({
-                ...prevDetails,
-                wing: newValue,
-                houseid: null,
-                memberId: null,
-              }));
-              setMemberDetails((prevDetails) => ({
-                ...prevDetails,
-                members: [],
-                called: false,
-              }));
-              setOtp({
-                sent: false,
-                loading: false,
-                sendAgain: false,
-                time: null,
-                value: null,
-                sentValue: null,
-              });
-            }}
-            row
-          >
-            <FormControlLabel value="a" control={<Radio />} label="A" />
-            <FormControlLabel value="b" control={<Radio />} label="B" />
-          </RadioGroup>
-        </FormControl>
-      </Box>
-      <TextField
-        sx={{ marginY: 1, width: "87%", maxWidth: "400px", color: "primary" }}
-        value={details.houseno ? details.houseno : ""}
-        label="House No"
-        onChange={(event) => {
-          if (!isNaN(parseInt(event.target.value))) {
-            setDetails((prevDetails) => ({
-              ...prevDetails,
-              houseno: parseInt(event.target.value),
-            }));
-          } else if (event.target.value === "") {
-            setDetails((prevDetails) => ({ ...prevDetails, houseno: null }));
-          }
-          setDetails((prevDetails) => ({
-            ...prevDetails,
-            houseid: null,
-            memberId: null,
-          }));
-          setMemberDetails((prevDetails) => ({
-            ...prevDetails,
-            members: [],
-            called: false,
-          }));
-          setOtp({
-            sent: false,
-            loading: false,
-            sendAgain: false,
-            time: null,
-            value: null,
-            sentValue: null,
-          });
-        }}
-        disabled={otp.loading}
-        InputProps={
-          loginType.withOtp
-            ? {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {!otp.sendAgain && otp.sent && !otp.loading ? (
-                      <Timer expiryTimestamp={otp.time}>
-                        {(minutes, seconds, isRunning) => {
-                          if (isRunning) {
-                            return (
-                              <Chip
-                                sx={{ color: "primary" }}
-                                label={`${minutes}:${seconds}`}
-                                disabled={true}
-                              />
-                            );
-                          } else {
-                            setOtp((prevOtp) => ({
-                              ...prevOtp,
-                              sendAgain: true,
-                              time: null,
-                            }));
-                            return <></>;
-                          }
-                        }}
-                      </Timer>
-                    ) : (
-                      <Chip
-                        sx={{ color: "primary" }}
-                        label={
-                          otp.loading
-                            ? "Sending..."
-                            : otp.sent
-                            ? "Resend OTP"
-                            : "Send OTP"
-                        }
-                        disabled={otp.loading || details.memberId === null}
-                        clickable={!otp.loading}
-                        onClick={handleSendOtp}
-                      />
-                    )}
-                  </InputAdornment>
-                ),
-              }
-            : {}
-        }
-      />
-      <FormControl
-        sx={{ width: "87%", maxWidth: "400px", marginY: 1 }}
-        disabled={!memberDetails.called || otp.loading}
-      >
-        <InputLabel id="member-select-label">
-          {memberDetails.loading && details.houseid
-            ? "Loading Members..."
-            : "Select Member"}
-        </InputLabel>
-        <Select
-          labelId="member-select-label"
-          id="member-select"
-          value={!(details.memberId === null) ? details.memberId : ""}
-          label={
-            memberDetails.loading && details.houseid
-              ? "Loading Members..."
-              : "Select Member"
-          }
-          onChange={(event) =>
-            setDetails((prevDetails) => ({
-              ...prevDetails,
-              memberId: event.target.value,
-            }))
-          }
-        >
-          {!memberDetails.loading && details.houseid
-            ? memberDetails.members.map((member) => (
-                <MenuItem key={member.id} value={member.id}>
-                  {member.name}
-                </MenuItem>
-              ))
-            : []}
-        </Select>
-      </FormControl>
-      {loginType.withOtp ? (
-        <>
-          <TextField
-            sx={{
-              marginY: 1,
-              width: "87%",
-              maxWidth: "400px",
-              color: "primary",
-            }}
-            value={otp.value ? otp.value : ""}
-            label="OTP"
-            onChange={(event) => {
-              if (!isNaN(parseInt(event.target.value))) {
-                setOtp((prevOtp) => ({
-                  ...prevOtp,
-                  value: parseInt(event.target.value),
-                }));
-              } else if (event.target.value === "") {
-                setOtp((prevOtp) => ({ ...prevOtp, value: null }));
-              }
-            }}
-            disabled={!otp.sent}
-          />
-        </>
-      ) : (
-        <>
-          <TextField
-            sx={{
-              marginY: 1,
-              width: "87%",
-              maxWidth: "400px",
-              color: "primary",
-            }}
-            value={details.password.value ? details.password.value : ""}
-            label="Password"
-            type={details.password.show ? "text" : "password"}
-            disabled={!details.memberId}
-            onChange={(event) =>
-              setDetails((prevDetails) => ({
-                ...prevDetails,
-                password: {
-                  ...prevDetails.password,
-                  value: event.target.value,
-                },
-              }))
-            }
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    edge="end"
-                    disabled={!details.memberId}
-                    onClick={() =>
-                      setDetails((prevDetails) => ({
-                        ...prevDetails,
-                        password: {
-                          ...prevDetails.password,
-                          show: !prevDetails.password.show,
-                        },
-                      }))
-                    }
-                  >
-                    {details.password.show ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </>
-      )}
-
+    <>
       <Box
         sx={{
           display: "flex",
           flexDirection: "column",
-          width: "100%",
           alignItems: { xs: "center", sm: "flex-start" },
-          justifyContent: { xs: "center", md: "center" },
+          marginTop: { xs: "22%", sm: 12 },
+          marginLeft: { sm: 10 },
         }}
       >
-        <Box
+        <Typography sx={{ paddingY: 2 }} variant="h5">
+          Login
+        </Typography>
+        <Divider
           sx={{
-            position: "relative",
-            width: "inherit",
-            display: { xs: "flex", sm: "block" },
-            justifyContent: "center",
+            display: { xs: "flex" },
+            marginBottom: { xs: 0.5, sm: 2 },
+            width: { sx: "80%", sm: "40%" },
           }}
-        >
-          <Button
-            variant="contained"
-            onClick={loginType.withOtp ? handleLoginOtp : handleLoginPassword}
+        />
+        <Box sx={{ display: "flex", flexDirection: "row", width: "auto" }}>
+          <Typography
+            variant="body1"
+            color="text.primary"
             sx={{
-              marginY: 1,
-              width: "87%",
-              maxWidth: "400px",
-              color: "primary",
+              marginTop: 1,
+              marginRight: 1.5,
             }}
-            disabled={
-              loginType.loading
-                ? true
-                : loginType.withOtp
-                ? !details.houseid ||
-                  !otp.value ||
-                  otp.value < 1000 ||
-                  otp.value > 9999
-                : !details.houseid || !details.password.value
-            }
           >
-            Login
-          </Button>
-          {loginType.loading && (
-            <CircularProgress
-              size={24}
-              sx={{
-                color: "primary",
-                position: "absolute",
-                top: "50%",
-                left: { xs: "50%", sm: "200px" },
-                marginTop: "-12px",
-                marginLeft: "-12px",
+            Wing:
+          </Typography>
+          <FormControl sx={{ mb: 1 }} disabled={sendOTPQueryIsFetching}>
+            <RadioGroup
+              row
+              value={wing}
+              onChange={(e) => {
+                setWing(e.target.value);
+                if (houseno !== null && !isNaN(houseno) && houseno !== "") {
+                  setQueries((prevQueries) => ({
+                    ...prevQueries,
+                    getHouseIdQuery: {
+                      ...prevQueries.getHouseIdQuery,
+                      enabled: true,
+                    },
+                  }));
+                  queryClient.removeQueries({
+                    queryKey: queries.getHouseIdQuery.queryKey,
+                    exact: true,
+                  });
+                }
               }}
-            />
-          )}
+            >
+              <FormControlLabel label="A" value="a" control={<Radio />} />
+              <FormControlLabel label="B" value="b" control={<Radio />} />
+            </RadioGroup>
+          </FormControl>
         </Box>
-        <Button
-          variant="outlined"
-          onClick={() =>
-            setLoginType((prevLoginType) => ({
-              ...prevLoginType,
-              withOtp: !prevLoginType.withOtp,
-            }))
-          }
-          sx={{
-            marginTop: { xs: 0.5, sm: 0.5, md: 1 },
-            width: "87%",
-            maxWidth: "400px",
-            color: "primary",
-          }}
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          style={{ width: "100%", maxWidth: "460px" }}
         >
-          {loginType.withOtp ? <>Login with Password</> : <>Login with OTP</>}
-        </Button>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: { xs: "center", sm: "flex-start" },
+            }}
+          >
+            <TextField
+              sx={{
+                marginY: 1,
+                width: "87%",
+                maxWidth: "400px",
+                color: "primary",
+              }}
+              label="House no"
+              disabled={sendOTPQueryIsFetching}
+              {...formRegister("houseno", {
+                required: {
+                  value: true,
+                  message: "Please enter a house number.",
+                },
+                valueAsNumber: true,
+                onChange: (e) => {
+                  if (!isNaN(parseInt(e.target.value))) {
+                    setHouseno(e.target.value);
+                    if (
+                      wing !== null &&
+                      houseno !== null &&
+                      !isNaN(houseno) &&
+                      houseno !== ""
+                    ) {
+                      setQueries((prevQueries) => ({
+                        ...prevQueries,
+                        getHouseIdQuery: {
+                          ...prevQueries.getHouseIdQuery,
+                          enabled: true,
+                        },
+                      }));
+                      queryClient.removeQueries({
+                        queryKey: queries.getHouseIdQuery.queryKey,
+                        exact: true,
+                      });
+                    }
+                  }
+                },
+                validate: (value) =>
+                  isNaN(parseInt(value))
+                    ? "Please enter a valid house number."
+                    : true,
+              })}
+              error={!!errors.houseno}
+              helperText={errors.houseno?.message}
+              InputProps={
+                loginType === "otp"
+                  ? {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          {!otpProps.sendAgain && otpProps.sent ? (
+                            <Timer expiryTimestamp={otpProps.time}>
+                              {(minutes, seconds, isRunning) => {
+                                if (isRunning) {
+                                  return (
+                                    <Chip
+                                      sx={{ color: "primary" }}
+                                      label={`Resend in ${minutes}:${seconds}`}
+                                      disabled={true}
+                                    />
+                                  );
+                                } else {
+                                  setOtpProps((prevProps) => ({
+                                    ...prevProps,
+                                    sendAgain: true,
+                                    time: null,
+                                  }));
 
-        <Button
-          sx={{
-            marginY: 1,
-            width: "87%",
-            maxWidth: "400px",
-            color: "primary",
-          }}
-          onClick={() => navigate("/register/user")}
-        >
-          New User? Register Here
-        </Button>
+                                  queryClient.removeQueries({
+                                    queryKey: queries.sendOTPQuery.queryKey,
+                                    exact: true,
+                                  });
+                                }
+                              }}
+                            </Timer>
+                          ) : (
+                            <Chip
+                              sx={{ color: "primary" }}
+                              label={
+                                sendOTPQueryIsFetching
+                                  ? "Sending..."
+                                  : otpProps.sent
+                                  ? "Resend OTP"
+                                  : "Send OTP"
+                              }
+                              disabled={
+                                userId === null || sendOTPQueryIsFetching
+                              }
+                              clickable={!sendOTPQueryIsFetching}
+                              onClick={() =>
+                                setQueries((prevQueries) => ({
+                                  ...prevQueries,
+                                  sendOTPQuery: {
+                                    ...prevQueries.sendOTPQuery,
+                                    enabled: true,
+                                  },
+                                }))
+                              }
+                            />
+                          )}
+                        </InputAdornment>
+                      ),
+                    }
+                  : {}
+              }
+            />
+            <FormControl
+              sx={{ width: "87%", maxWidth: "400px", marginY: 1 }}
+              disabled={
+                getUserNamesQueryData === undefined || sendOTPQueryIsFetching
+              }
+            >
+              <InputLabel id="select-member-label">
+                {getUserNamesQueryData !== undefined
+                  ? "Select member"
+                  : getUserNamesQueryIsFetching
+                  ? "Loading members..."
+                  : "Enter a valid house no"}
+              </InputLabel>
+              <Select
+                labelId="select-member-label"
+                label={
+                  getUserNamesQueryData !== undefined
+                    ? "Select member"
+                    : getUserNamesQueryIsFetching
+                    ? "Loading members..."
+                    : "Enter a valid house no to select member"
+                }
+                value={userId === null ? "" : userId}
+                onChange={(e) => setUserId(e.target.value)}
+              >
+                {getUserNamesQueryData !== undefined
+                  ? getUserNamesQueryData.map((user) => (
+                      <MenuItem key={user.id} value={user.id}>
+                        {user.name}
+                      </MenuItem>
+                    ))
+                  : []}
+              </Select>
+            </FormControl>
+            {loginType === "otp" ? (
+              <TextField
+                sx={{
+                  marginY: 1,
+                  width: "87%",
+                  maxWidth: "400px",
+                  color: "primary",
+                }}
+                label="OTP"
+                disabled={
+                  sendOTPQueryIsSuccess === undefined || !sendOTPQueryIsSuccess
+                }
+                {...formRegister("otp", {
+                  required: {
+                    value: loginType === "otp",
+                    message: "Please enter an OTP.",
+                  },
+                  valueAsNumber: true,
+                  validate: (value) =>
+                    isNaN(parseInt(value)) ||
+                    parseInt(value) < 1111 ||
+                    parseInt(value) > 9999
+                      ? "Please enter a valid OTP."
+                      : true,
+                })}
+                error={!!errors.otp}
+                helperText={errors.otp?.message}
+              />
+            ) : (
+              <TextField
+                sx={{
+                  marginY: 1,
+                  width: "87%",
+                  maxWidth: "400px",
+                  color: "primary",
+                }}
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                disabled={userId === null}
+                {...formRegister("password", {
+                  required: {
+                    value: loginType === "password",
+                    message: "Please enter a password.",
+                  },
+                })}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        edge="end"
+                        disabled={userId === null}
+                        onClick={() => setShowPassword((prevShow) => !prevShow)}
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+                alignItems: { xs: "center", sm: "flex-start" },
+                justifyContent: { xs: "center", md: "center" },
+              }}
+            >
+              <Box
+                sx={{
+                  position: "relative",
+                  width: "inherit",
+                  display: { xs: "flex", sm: "block" },
+                  justifyContent: "center",
+                }}
+              >
+                <Button
+                  variant="contained"
+                  type="submit"
+                  sx={{
+                    marginY: 1,
+                    width: "87%",
+                    maxWidth: "400px",
+                    color: "primary",
+                  }}
+                  disabled={!isValid || loginQueryIsFetching}
+                >
+                  Login
+                </Button>
+                {loginQueryIsFetching && (
+                  <CircularProgress
+                    size={24}
+                    sx={{
+                      color: "primary",
+                      position: "absolute",
+                      top: "50%",
+                      left: { xs: "50%", sm: "200px" },
+                      marginTop: "-12px",
+                      marginLeft: "-12px",
+                    }}
+                  />
+                )}
+              </Box>
+              <Button
+                variant="outlined"
+                onClick={() =>
+                  setLoginType((prevLoginType) =>
+                    prevLoginType === "otp" ? "password" : "otp"
+                  )
+                }
+                sx={{
+                  marginTop: { xs: 0.5, sm: 0.5, md: 1 },
+                  width: "87%",
+                  maxWidth: "400px",
+                  color: "primary",
+                }}
+              >
+                {loginType === "otp" ? (
+                  <>Login with Password</>
+                ) : (
+                  <>Login with OTP</>
+                )}
+              </Button>
+
+              <Button
+                sx={{
+                  marginY: 1,
+                  width: "87%",
+                  maxWidth: "400px",
+                  color: "primary",
+                }}
+                onClick={() => navigate("/register/user")}
+              >
+                New User? Register Here
+              </Button>
+            </Box>
+          </Box>
+        </form>
       </Box>
-    </Box>
+
+      <AlertDialog
+        open={loginQueryIsError}
+        title="Log in failed"
+        content={
+          <Typography variant="body2">
+            {loginQueryError?.response?.status === 400
+              ? loginQueryError?.response?.data.detail === "Invalid data"
+                ? "An error occurred. Please try again after sometime."
+                : "The credentials that you entered are incorrect. Please check them again and try again."
+              : "An error occurred. Please try again after some time."}
+          </Typography>
+        }
+        showActions={true}
+        actions={[
+          {
+            text: "OK",
+            onclick: () => {
+              formReset();
+              setWing(null);
+              setUserId(null);
+              setQueries((prevQueries) => ({
+                ...prevQueries,
+                getHouseIdQuery: {
+                  ...prevQueries.getHouseIdQuery,
+                  enabled: false,
+                },
+                getUserNamesQuery: {
+                  ...prevQueries.getUserNamesQuery,
+                  enabled: false,
+                },
+                sendOTPQuery: { ...prevQueries.sendOTPQuery, enabled: false },
+                loginQuery: { ...prevQueries.loginQuery, enabled: false },
+              }));
+
+              queryClient.removeQueries({
+                queryKey: queries.getHouseIdQuery.queryKey,
+                exact: true,
+              });
+              queryClient.removeQueries({
+                queryKey: queries.getUserNamesQuery.queryKey,
+                exact: true,
+              });
+              queryClient.removeQueries({
+                queryKey: queries.sendOTPQuery.queryKey,
+                exact: true,
+              });
+              queryClient.removeQueries({
+                queryKey: queries.loginQuery.queryKey,
+                exact: true,
+              });
+            },
+          },
+        ]}
+      />
+
+      {/* <DevTool control={control} /> */}
+    </>
   );
 };
