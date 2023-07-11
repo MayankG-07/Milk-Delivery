@@ -9,7 +9,7 @@ export const MILK_DELIVERY_USER = "MILK_DELIVERY_USER";
 export const UserContext = createContext({
   userDetails: null,
   fetchNewUserDetails: ({ _logout, _userid, _token_data }) => {},
-  verifyTokenData: ({ _token_data }) => {},
+  verifyTokenData: (_passedTokenParams) => {},
 });
 
 // stored object = {
@@ -28,7 +28,7 @@ export const UserContextProvider = ({ children }) => {
       : null
   );
 
-  const fetchNewUserDetails = async ({ logout, userid, token_data }) => {
+  const fetchNewUserDetails = async ({ logout, userid }) => {
     if (!logout) {
       await axios({
         method: "GET",
@@ -80,7 +80,11 @@ export const UserContextProvider = ({ children }) => {
         if ("token_data" in data) {
           token_data = data.token_data;
         }
+      } else {
+        return;
       }
+    } else {
+      token_data = passedTokenParams.token_data;
     }
 
     if (token_data !== undefined && token_data !== null) {
@@ -108,6 +112,7 @@ export const UserContextProvider = ({ children }) => {
           }
         });
     } else {
+      fetchNewUserDetails({ logout: true });
     }
   };
 

@@ -38,7 +38,7 @@ const App = () => {
             <Route path="register/house" element={<RegisterHouse />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="verify" element={<VerifyEmail />} />
-            <Route path="*" element={<NotFound404 />} />
+            <Route path="*" exact={true} element={<NotFound404 />} />
           </Routes>
         </UserContextProvider>
       </ThemeProvider>

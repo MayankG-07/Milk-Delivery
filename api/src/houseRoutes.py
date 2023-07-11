@@ -22,6 +22,7 @@ async def register_house(
 ):
     wing = params.wing
     houseno = params.houseno
+    print(token_data)
     userid: int = token_data.get("userid")
 
     con = connect()

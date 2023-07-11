@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import PropTypes from "prop-types";
 import {
   AppBar,
@@ -27,15 +27,19 @@ const drawerWidth = 250;
 export const Navbar = (props) => {
   const { window } = props;
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
 
   const navigate = useNavigate();
 
-  const { userDetails, fetchNewUserDetails, verifyTokenData } =
-    useContext(UserContext);
+  const { userDetails, fetchNewUserDetails } = useContext(UserContext);
 
-  console.log(userDetails);
-  const loggedIn =
-    userDetails !== null && userDetails !== undefined && verifyTokenData();
+  useEffect(() => {
+    setLoggedIn(
+      userDetails !== null &&
+        userDetails !== undefined &&
+        "token_data" in userDetails
+    );
+  }, [userDetails]);
 
   // console.log(userDetails);
   // console.log(loggedIn);

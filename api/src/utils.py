@@ -57,7 +57,12 @@ def verify_access_token(token: str, e):
         # user = User(userid=userid)
         # await user.sync_details()
 
-        token_data = {"userid": userid, "login_type": login_type}
+        token_data = {
+            "userid": userid,
+            "login_type": login_type,
+            "access_token": token,
+            "token_type": "bearer",
+        }
         return token_data
     except:
         raise e
@@ -70,8 +75,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     token_data = verify_access_token(token, e)
-    userid = token_data.get("userid")
-    return userid
+    return token_data
 
 
 # def create_refresh_token(subject: Union[str, Any], expires_delta: int = None):

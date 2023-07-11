@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import {
   Box,
   Typography,
@@ -7,275 +8,369 @@ import {
   FormControlLabel,
   Radio,
   TextField,
-  InputAdornment,
-  IconButton,
   Button,
   CircularProgress,
 } from "@mui/material";
-import { useState } from "react";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { useContext, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { url } from "../../assets/res";
+import { DevTool } from "@hookform/devtools";
+import { AlertDialog } from "../misc/AlertDialog";
+import { UserContext } from "../../context/userContext";
+import { SessionExpiredAlert } from "../misc/SessionExpiredAlert";
 import { useNavigate } from "react-router-dom";
 
 export const RegisterHouse = () => {
-  const [details, setDetails] = useState({
-    wing: "",
-    houseNo: "",
-    email: "",
-    password: { value: "", show: false },
-    confirmPassword: { value: "", show: false },
-  });
+  const [wing, setWing] = useState(null);
+  const [houseno, setHouseno] = useState(null);
 
-  const [registerLoading, setRegisterLoading] = useState(false);
+  const { userDetails, fetchNewUserDetails, verifyTokenData } =
+    useContext(UserContext);
 
   const navigate = useNavigate();
 
-  const handleRegisterHouse = () => {
-    if (!details.wing || !details.houseNo || !details.email) {
-      alert("Please enter valid details");
-      return;
-    } else if (details.password.value !== details.confirmPassword.value) {
-      alert("Passwords do not match");
-      return;
-    }
+  const {
+    register: formRegister,
+    handleSubmit,
+    control,
+    formState: {
+      errors,
+      isValid,
+      isSubmitting,
+      isSubmitted,
+      isSubmitSuccessful,
+    },
+    reset: formReset,
+  } = useForm({ mode: "onChange" });
 
-    setRegisterLoading(true);
+  const queryClient = useQueryClient();
 
-    axios
-      .post(`${url}/api/register`, {
-        wing: details.wing,
-        houseno: details.houseNo,
-        email: details.email,
-        password: details.password.value,
-      })
-      .then((res) => {
-        setRegisterLoading(false);
-        if (res.data.success) {
-          register();
-          return;
-        } else if (res.data.error === "DUPLICATE_HOUSENO") {
-          alert("User already exists");
-          return;
-        } else {
-          alert("An error occurred");
-          console.log(res.data.error);
-          return;
+  const [queries, setQueries] = useState({
+    getHouseIdQuery: {
+      queryKey: ["getHouseId"],
+      queryFn: async (wing, houseno) => {
+        return await axios({
+          method: "GET",
+          url: `${url}/house/details`,
+          params: {
+            wing,
+            houseno,
+          },
+        });
+      },
+      resultData: null,
+      enabled: false,
+    },
+    registerHouseQuery: {
+      queryKey: ["registerHouse"],
+      queryFn: async (wing, houseno) => {
+        return await axios({
+          method: "POST",
+          url: `${url}/house/register`,
+          data: { wing, houseno },
+          headers: {
+            Authorization: `Bearer ${userDetails?.token_data?.access_token}`,
+          },
+        });
+      },
+      resultData: null,
+      enabled: false,
+    },
+  });
+
+  const [
+    {
+      isFetching: getHouseIdQueryIsFetching,
+      data: getHouseIdQueryData,
+      isError: getHouseIdQueryIsError,
+      error: getHouseIdQueryError,
+      isSuccess: getHouseIdQueryIsSuccess,
+    },
+    {
+      isFetching: registerHouseQueryIsFetching,
+      data: registerHouseQueryData,
+      isError: registerHouseQueryIsError,
+      error: registerHouseQueryError,
+      isSuccess: registerHouseQueryIsSuccess,
+    },
+  ] = [
+    useQuery({
+      queryKey: queries.getHouseIdQuery.queryKey,
+      queryFn: async () => await queries.getHouseIdQuery.queryFn(wing, houseno),
+      enabled: queries.getHouseIdQuery.enabled,
+      refetchOnWindowFocus: false,
+      retry: false,
+      onError: (err) => {
+        if (
+          (err.response.status === 404) &
+          (err.response.data.detail === "House not found")
+        ) {
+          setQueries((prevQueries) => ({
+            ...prevQueries,
+            registerHouseQuery: {
+              ...prevQueries.registerHouseQuery,
+              enabled: true,
+            },
+          }));
         }
-      })
-      .catch((error) => {
-        setRegisterLoading(false);
-        alert("An error occurred");
-        console.log(error);
-      });
-  };
+      },
+    }),
+    useQuery({
+      queryKey: queries.registerHouseQuery.queryKey,
+      queryFn: async () =>
+        await queries.registerHouseQuery.queryFn(wing, houseno),
+      enabled: queries.registerHouseQuery.enabled,
+      refetchOnWindowFocus: false,
+      retry: false,
+    }),
+  ];
 
-  const register = () => {
-    // TODO register redirect code goes here
+  const onSubmit = () => {
+    verifyTokenData();
+    if (userDetails !== null) {
+      setQueries((prevQueries) => ({
+        ...prevQueries,
+        getHouseIdQuery: { ...prevQueries.getHouseIdQuery, enabled: true },
+      }));
+    }
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: { xs: "center", sm: "flex-start" },
-        marginTop: 12,
-        marginLeft: { sm: 10 },
-      }}
-    >
-      <Typography sx={{ paddingY: 2 }} variant="h5">
-        Register House
-      </Typography>
-      <Divider
-        sx={{
-          display: { xs: "flex" },
-          marginBottom: { xs: 0.5, sm: 2 },
-          width: { sx: "80%", sm: "40%" },
-        }}
-      />
-      <Box sx={{ display: "flex", flexDirection: "row", width: "auto" }}>
-        <Typography
-          variant="body1"
-          color="text.primary"
-          sx={{
-            marginTop: 1,
-            marginRight: 1.5,
-          }}
-        >
-          Wing:
-        </Typography>
-        <FormControl sx={{ marginBottom: 1 }}>
-          <RadioGroup
-            value={useState.wing}
-            onChange={(_event, newValue) =>
-              setDetails((prevDetails) => ({ ...prevDetails, wing: newValue }))
-            }
-            sx={{ alignItems: "center", justifyContent: "center" }}
-            row
-          >
-            <FormControlLabel value="a" control={<Radio />} label="A" />
-            <FormControlLabel value="b" control={<Radio />} label="B" />
-          </RadioGroup>
-        </FormControl>
-      </Box>
-      <TextField
-        sx={{ marginY: 1, width: "87%", maxWidth: "400px", color: "primary" }}
-        value={details.houseNo}
-        label="House No"
-        onChange={(event) => {
-          if (!isNaN(parseInt(event.target.value))) {
-            setDetails((prevDetails) => ({
-              ...prevDetails,
-              houseNo: parseInt(event.target.value),
-            }));
-          } else if (event.target.value === "") {
-            setDetails((prevDetails) => ({ ...prevDetails, houseNo: "" }));
-          }
-        }}
-      />
-      <TextField
-        sx={{ marginY: 1, width: "87%", maxWidth: "400px", color: "primary" }}
-        value={details.email}
-        label="Email"
-        type="email"
-        onChange={(event) =>
-          setDetails((prevDetails) => ({
-            ...prevDetails,
-            email: event.target.value,
-          }))
-        }
-      />
-      <TextField
-        sx={{ marginY: 1, width: "87%", maxWidth: "400px", color: "primary" }}
-        value={details.password.value}
-        label="Password"
-        type={details.password.show ? "text" : "password"}
-        onChange={(event) =>
-          setDetails((prevDetails) => ({
-            ...prevDetails,
-            password: { ...prevDetails.password, value: event.target.value },
-          }))
-        }
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton
-                edge="end"
-                onClick={() =>
-                  setDetails((prevDetails) => ({
-                    ...prevDetails,
-                    password: {
-                      ...prevDetails.password,
-                      show: !prevDetails.password.show,
-                    },
-                  }))
-                }
-              >
-                {details.password.show ? <VisibilityOff /> : <Visibility />}
-              </IconButton>
-            </InputAdornment>
-          ),
-        }}
-      />
-      <TextField
-        sx={{ marginY: 1, width: "87%", maxWidth: "400px", color: "primary" }}
-        value={details.confirmPassword.value}
-        label="Confirm Password"
-        type={details.confirmPassword.show ? "text" : "password"}
-        onChange={(event) =>
-          setDetails((prevDetails) => ({
-            ...prevDetails,
-            confirmPassword: {
-              ...prevDetails.confirmPassword,
-              value: event.target.value,
-            },
-          }))
-        }
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton
-                edge="end"
-                onClick={() =>
-                  setDetails((prevDetails) => ({
-                    ...prevDetails,
-                    confirmPassword: {
-                      ...prevDetails.confirmPassword,
-                      show: !prevDetails.confirmPassword.show,
-                    },
-                  }))
-                }
-              >
-                {details.confirmPassword.show ? (
-                  <VisibilityOff />
-                ) : (
-                  <Visibility />
-                )}
-              </IconButton>
-            </InputAdornment>
-          ),
-        }}
-      />
-
+    <>
       <Box
         sx={{
           display: "flex",
           flexDirection: "column",
-          width: "100%",
           alignItems: { xs: "center", sm: "flex-start" },
-          justifyContent: { xs: "center", md: "center" },
+          marginTop: { xs: "22%", sm: 12 },
+          marginLeft: { sm: 10 },
         }}
       >
-        <Box
+        <Typography sx={{ paddingY: 2 }} variant="h5">
+          Register a House
+        </Typography>
+        <Divider
           sx={{
-            position: "relative",
-            width: "inherit",
-            display: { xs: "flex", sm: "block" },
-            justifyContent: "center",
+            display: { xs: "flex" },
+            marginBottom: { xs: 0.5, sm: 2 },
+            width: { sx: "80%", sm: "40%" },
           }}
-        >
-          <Button
-            variant="contained"
-            onClick={handleRegisterHouse}
+        />
+        <Box sx={{ display: "flex", flexDirection: "row", width: "auto" }}>
+          <Typography
+            variant="body1"
+            color="text.primary"
             sx={{
-              marginY: 1,
-              width: "87%",
-              maxWidth: "400px",
-              color: "primary",
+              marginTop: 1,
+              marginRight: 1.5,
             }}
-            disabled={registerLoading}
           >
-            Register
-          </Button>
-          {registerLoading && (
-            <CircularProgress
-              size={24}
-              sx={{
-                color: "primary",
-                position: "absolute",
-                top: "50%",
-                left: { xs: "50%", sm: "200px" },
-                marginTop: "-12px",
-                marginLeft: "-12px",
+            Wing:
+          </Typography>
+          <FormControl sx={{ mb: 1 }}>
+            <RadioGroup
+              row
+              value={wing}
+              onChange={(e) => {
+                setWing(e.target.value);
               }}
-            />
-          )}
+            >
+              <FormControlLabel label="A" value="a" control={<Radio />} />
+              <FormControlLabel label="B" value="b" control={<Radio />} />
+            </RadioGroup>
+          </FormControl>
         </Box>
-
-        <Button
-          sx={{
-            marginTop: { xs: 0.5, sm: 0.5, md: 1 },
-            width: "87%",
-            maxWidth: "400px",
-            color: "primary",
-          }}
-          onClick={() => navigate("/login")}
-          variant="outlined"
+        <form
+          style={{ width: "100%", maxWidth: "345px" }}
+          onSubmit={handleSubmit(onSubmit)}
         >
-          Existing User? Login Here
-        </Button>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: { xs: "center", sm: "flex-start" },
+            }}
+          >
+            <TextField
+              sx={{
+                marginY: 1,
+                width: "87%",
+                maxWidth: "300px",
+                color: "primary",
+              }}
+              label="House no"
+              {...formRegister("houseno", {
+                required: {
+                  value: true,
+                  message: "Please enter a house number.",
+                },
+                valueAsNumber: true,
+                onChange: (e) => {
+                  if (!isNaN(parseInt(e.target.value))) {
+                    setHouseno(e.target.value);
+                  }
+                },
+                validate: (value) =>
+                  isNaN(parseInt(value))
+                    ? "Please enter a valid house number."
+                    : true,
+              })}
+              error={!!errors.houseno}
+              helperText={errors.houseno?.message}
+            />
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+                alignItems: { xs: "center", sm: "flex-start" },
+                justifyContent: { xs: "center", md: "center" },
+              }}
+            >
+              <Box
+                sx={{
+                  position: "relative",
+                  width: "inherit",
+                  display: { xs: "flex", sm: "block" },
+                  justifyContent: "center",
+                }}
+              >
+                <Button
+                  variant="contained"
+                  type="submit"
+                  sx={{
+                    marginY: 1,
+                    width: "87%",
+                    maxWidth: "300px",
+                    color: "primary",
+                  }}
+                  disabled={!isValid || wing === null}
+                >
+                  Register
+                </Button>
+                {getHouseIdQueryIsFetching && (
+                  <CircularProgress
+                    size={24}
+                    sx={{
+                      color: "primary",
+                      position: "absolute",
+                      top: "50%",
+                      left: { xs: "50%", sm: "200px" },
+                      marginTop: "-12px",
+                      marginLeft: "-12px",
+                    }}
+                  />
+                )}
+              </Box>
+            </Box>
+          </Box>
+        </form>
       </Box>
-    </Box>
+
+      <AlertDialog
+        open={getHouseIdQueryIsSuccess}
+        title="Register house failed"
+        content={
+          <Typography variant="body2">
+            {`The house ${wing?.toUpperCase()}-${houseno} already exists. Please
+            check the details that you have entered.`}
+          </Typography>
+        }
+        showActions={true}
+        actions={[
+          {
+            text: "OK",
+            onclick: () => {
+              formReset();
+              setWing(null);
+              setQueries((prevQueries) => ({
+                ...prevQueries,
+                getHouseIdQuery: {
+                  ...prevQueries.getHouseIdQuery,
+                  enabled: false,
+                },
+              }));
+              queryClient.removeQueries({
+                queryKey: queries.getHouseIdQuery.queryKey,
+                exact: true,
+              });
+            },
+          },
+        ]}
+      />
+
+      <AlertDialog
+        open={registerHouseQueryIsSuccess}
+        title="House registered successfully"
+        content={
+          <Typography variant="body2">
+            {`The house ${wing?.toUpperCase()}-${houseno} has been registered successfully. You can now add members
+            to your house.`}
+          </Typography>
+        }
+        showActions={true}
+        actions={[
+          {
+            text: "Add members",
+            onclick: () => {
+              setQueries((prevQueries) => ({
+                ...prevQueries,
+                getHouseIdQuery: {
+                  ...prevQueries.getHouseIdQuery,
+                  enabled: false,
+                },
+                registerHouseQuery: {
+                  ...prevQueries.registerHouseQuery,
+                  enabled: false,
+                },
+              }));
+
+              queryClient.removeQueries({
+                queryKey: queries.getHouseIdQuery.queryKey,
+                exact: true,
+              });
+              queryClient.removeQueries({
+                queryKey: queries.registerHouseQuery.queryKey,
+                exact: true,
+              });
+
+              navigate("/house/add-members");
+            },
+          },
+          {
+            text: "Maybe later",
+            onclick: () => {
+              setQueries((prevQueries) => ({
+                ...prevQueries,
+                getHouseIdQuery: {
+                  ...prevQueries.getHouseIdQuery,
+                  enabled: false,
+                },
+                registerHouseQuery: {
+                  ...prevQueries.registerHouseQuery,
+                  enabled: false,
+                },
+              }));
+
+              queryClient.removeQueries({
+                queryKey: queries.getHouseIdQuery.queryKey,
+                exact: true,
+              });
+              queryClient.removeQueries({
+                queryKey: queries.registerHouseQuery.queryKey,
+                exact: true,
+              });
+            },
+          },
+        ]}
+      />
+
+      <SessionExpiredAlert />
+
+      <DevTool control={control} />
+    </>
   );
 };
