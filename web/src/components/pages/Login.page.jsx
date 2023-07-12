@@ -35,8 +35,9 @@ export const Login = () => {
 
   const [wing, setWing] = useState(null);
   const [houseno, setHouseno] = useState(null);
+  const [email, setEmail] = useState(null);
   const [userId, setUserId] = useState(null);
-  const [loginType, setLoginType] = useState("otp");
+  const [loginType, setLoginType] = useState({ secret: "otp", using: "house" });
   const [showPassword, setShowPassword] = useState(false);
   const [otpProps, setOtpProps] = useState({
     sent: false,
@@ -72,6 +73,20 @@ export const Login = () => {
           params: {
             wing,
             houseno,
+          },
+        });
+      },
+      resultData: null,
+      enabled: false,
+    },
+    getUserIdByEmailQuery: {
+      queryKey: ["getUserIdByEmail"],
+      queryFn: async (email) => {
+        return await axios({
+          method: "GET",
+          url: `${url}/user/details`,
+          params: {
+            email,
           },
         });
       },
@@ -149,6 +164,13 @@ export const Login = () => {
       isSuccess: getHouseIdQueryIsSuccess,
     },
     {
+      isFetching: getUserIdByEmailQueryIsFetching,
+      data: getUserIdByEmailQueryData,
+      isError: getUserIdByEmailQueryIsError,
+      error: getUserIdByEmailQueryError,
+      isSuccess: getUserIdByEmailQueryIsSuccess,
+    },
+    {
       isFetching: getUserNamesQueryIsFetching,
       data: getUserNamesQueryData,
       isError: getUserNamesQueryIsError,
@@ -200,6 +222,15 @@ export const Login = () => {
           },
         }));
       },
+    }),
+    useQuery({
+      queryKey: queries.getUserIdByEmailQuery.queryKey,
+      queryFn: async () => await queries.getUserIdByEmailQuery.queryFn(email),
+      enabled: queries.getUserIdByEmailQuery.enabled,
+      refetchOnWindowFocus: false,
+      retry: false,
+      onSuccess: (res) => setUserId(res.data.userid),
+      onError: (_err) => setUserId(null),
     }),
     useQuery({
       queryKey: queries.getUserNamesQuery.queryKey,
@@ -257,7 +288,7 @@ export const Login = () => {
   const onSubmit = (formData) => {
     const { otp, password } = formData;
     setLoginData(
-      loginType === "otp"
+      loginType.secret === "otp"
         ? { userid: userId, otp }
         : { userid: userId, password }
     );
@@ -297,34 +328,78 @@ export const Login = () => {
               marginRight: 1.5,
             }}
           >
-            Wing:
+            Login using:
           </Typography>
-          <FormControl sx={{ mb: 1 }} disabled={sendOTPQueryIsFetching}>
+          <FormControl
+            disabled={sendOTPQueryIsFetching || loginQueryIsFetching}
+          >
             <RadioGroup
               row
-              value={wing}
+              value={loginType.using}
               onChange={(e) => {
-                setWing(e.target.value);
-                if (houseno !== null && !isNaN(houseno) && houseno !== "") {
-                  setQueries((prevQueries) => ({
-                    ...prevQueries,
-                    getHouseIdQuery: {
-                      ...prevQueries.getHouseIdQuery,
-                      enabled: true,
-                    },
-                  }));
-                  queryClient.removeQueries({
-                    queryKey: queries.getHouseIdQuery.queryKey,
-                    exact: true,
-                  });
-                }
+                setLoginType((prevLoginType) => ({
+                  ...prevLoginType,
+                  using: e.target.value,
+                }));
               }}
             >
-              <FormControlLabel label="A" value="a" control={<Radio />} />
-              <FormControlLabel label="B" value="b" control={<Radio />} />
+              <FormControlLabel
+                label="House details"
+                value="house"
+                control={<Radio />}
+              />
+              <FormControlLabel
+                label="Email"
+                value="email"
+                control={<Radio />}
+              />
             </RadioGroup>
           </FormControl>
         </Box>
+        {loginType.using === "house" ? (
+          <Box sx={{ display: "flex", flexDirection: "row", width: "auto" }}>
+            <Typography
+              variant="body1"
+              color="text.primary"
+              sx={{
+                marginTop: 1,
+                marginRight: 1.5,
+              }}
+            >
+              Wing:
+            </Typography>
+            <FormControl
+              sx={{ mb: 1 }}
+              disabled={sendOTPQueryIsFetching || loginQueryIsFetching}
+            >
+              <RadioGroup
+                row
+                value={wing}
+                onChange={(e) => {
+                  setWing(e.target.value);
+                  if (houseno !== null && !isNaN(houseno) && houseno !== "") {
+                    setQueries((prevQueries) => ({
+                      ...prevQueries,
+                      getHouseIdQuery: {
+                        ...prevQueries.getHouseIdQuery,
+                        enabled: true,
+                      },
+                    }));
+                    queryClient.removeQueries({
+                      queryKey: queries.getHouseIdQuery.queryKey,
+                      exact: true,
+                    });
+                  }
+                }}
+              >
+                <FormControlLabel label="A" value="a" control={<Radio />} />
+                <FormControlLabel label="B" value="b" control={<Radio />} />
+              </RadioGroup>
+            </FormControl>
+          </Box>
+        ) : (
+          <></>
+        )}
         <form
           onSubmit={handleSubmit(onSubmit)}
           style={{ width: "100%", maxWidth: "460px" }}
@@ -336,147 +411,143 @@ export const Login = () => {
               alignItems: { xs: "center", sm: "flex-start" },
             }}
           >
-            <TextField
-              sx={{
-                marginY: 1,
-                width: "87%",
-                maxWidth: "400px",
-                color: "primary",
-              }}
-              label="House no"
-              disabled={sendOTPQueryIsFetching}
-              {...formRegister("houseno", {
-                required: {
-                  value: true,
-                  message: "Please enter a house number.",
-                },
-                valueAsNumber: true,
-                onChange: (e) => {
-                  if (!isNaN(parseInt(e.target.value))) {
-                    setHouseno(e.target.value);
-                    if (
-                      wing !== null &&
-                      houseno !== null &&
-                      !isNaN(houseno) &&
-                      houseno !== ""
-                    ) {
-                      setQueries((prevQueries) => ({
-                        ...prevQueries,
-                        getHouseIdQuery: {
-                          ...prevQueries.getHouseIdQuery,
-                          enabled: true,
-                        },
-                      }));
-                      queryClient.removeQueries({
-                        queryKey: queries.getHouseIdQuery.queryKey,
-                        exact: true,
-                      });
-                    }
+            {loginType.using === "house" ? (
+              <>
+                <TextField
+                  sx={{
+                    marginY: 1,
+                    width: "87%",
+                    maxWidth: "400px",
+                    color: "primary",
+                  }}
+                  label="House no"
+                  disabled={sendOTPQueryIsFetching || loginQueryIsFetching}
+                  {...formRegister("houseno", {
+                    required: {
+                      value: loginType.using === "house",
+                      message: "Please enter a house number.",
+                    },
+                    valueAsNumber: true,
+                    onChange: (e) => {
+                      if (!isNaN(parseInt(e.target.value))) {
+                        setHouseno(e.target.value);
+                        if (
+                          wing !== null &&
+                          houseno !== null &&
+                          !isNaN(houseno) &&
+                          houseno !== ""
+                        ) {
+                          setQueries((prevQueries) => ({
+                            ...prevQueries,
+                            getHouseIdQuery: {
+                              ...prevQueries.getHouseIdQuery,
+                              enabled: true,
+                            },
+                          }));
+                          queryClient.removeQueries({
+                            queryKey: queries.getHouseIdQuery.queryKey,
+                            exact: true,
+                          });
+                        }
+                      }
+                    },
+                    validate: (value) =>
+                      isNaN(parseInt(value))
+                        ? "Please enter a valid house number."
+                        : true,
+                  })}
+                  error={!!errors.houseno}
+                  helperText={errors.houseno?.message}
+                />
+                <FormControl
+                  sx={{ width: "87%", maxWidth: "400px", marginY: 1 }}
+                  disabled={
+                    getUserNamesQueryData === undefined ||
+                    sendOTPQueryIsFetching
                   }
-                },
-                validate: (value) =>
-                  isNaN(parseInt(value))
-                    ? "Please enter a valid house number."
-                    : true,
-              })}
-              error={!!errors.houseno}
-              helperText={errors.houseno?.message}
-              InputProps={
-                loginType === "otp"
-                  ? {
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          {!otpProps.sendAgain && otpProps.sent ? (
-                            <Timer expiryTimestamp={otpProps.time}>
-                              {(minutes, seconds, isRunning) => {
-                                if (isRunning) {
-                                  return (
-                                    <Chip
-                                      sx={{ color: "primary" }}
-                                      label={`Resend in ${minutes}:${seconds}`}
-                                      disabled={true}
-                                    />
-                                  );
-                                } else {
-                                  setOtpProps((prevProps) => ({
-                                    ...prevProps,
-                                    sendAgain: true,
-                                    time: null,
-                                  }));
-
-                                  queryClient.removeQueries({
-                                    queryKey: queries.sendOTPQuery.queryKey,
-                                    exact: true,
-                                  });
-                                }
-                              }}
-                            </Timer>
-                          ) : (
-                            <Chip
-                              sx={{ color: "primary" }}
-                              label={
-                                sendOTPQueryIsFetching
-                                  ? "Sending..."
-                                  : otpProps.sent
-                                  ? "Resend OTP"
-                                  : "Send OTP"
-                              }
-                              disabled={
-                                userId === null || sendOTPQueryIsFetching
-                              }
-                              clickable={!sendOTPQueryIsFetching}
-                              onClick={() =>
-                                setQueries((prevQueries) => ({
-                                  ...prevQueries,
-                                  sendOTPQuery: {
-                                    ...prevQueries.sendOTPQuery,
-                                    enabled: true,
-                                  },
-                                }))
-                              }
-                            />
-                          )}
-                        </InputAdornment>
-                      ),
+                >
+                  <InputLabel id="select-member-label">
+                    {getUserNamesQueryData !== undefined
+                      ? "Select member"
+                      : getUserNamesQueryIsFetching
+                      ? "Loading members..."
+                      : "Enter a valid house no"}
+                  </InputLabel>
+                  <Select
+                    labelId="select-member-label"
+                    label={
+                      getUserNamesQueryData !== undefined
+                        ? "Select member"
+                        : getUserNamesQueryIsFetching
+                        ? "Loading members..."
+                        : "Enter a valid house no to select member"
                     }
-                  : {}
-              }
-            />
-            <FormControl
-              sx={{ width: "87%", maxWidth: "400px", marginY: 1 }}
-              disabled={
-                getUserNamesQueryData === undefined || sendOTPQueryIsFetching
-              }
-            >
-              <InputLabel id="select-member-label">
-                {getUserNamesQueryData !== undefined
-                  ? "Select member"
-                  : getUserNamesQueryIsFetching
-                  ? "Loading members..."
-                  : "Enter a valid house no"}
-              </InputLabel>
-              <Select
-                labelId="select-member-label"
-                label={
-                  getUserNamesQueryData !== undefined
-                    ? "Select member"
-                    : getUserNamesQueryIsFetching
-                    ? "Loading members..."
-                    : "Enter a valid house no to select member"
-                }
-                value={userId === null ? "" : userId}
-                onChange={(e) => setUserId(e.target.value)}
-              >
-                {getUserNamesQueryData !== undefined
-                  ? getUserNamesQueryData.map((user) => (
-                      <MenuItem key={user.id} value={user.id}>
-                        {user.name}
-                      </MenuItem>
-                    ))
-                  : []}
-              </Select>
-            </FormControl>
-            {loginType === "otp" ? (
+                    value={userId === null ? "" : userId}
+                    onChange={(e) => setUserId(e.target.value)}
+                  >
+                    {getUserNamesQueryData !== undefined
+                      ? getUserNamesQueryData.map((user) => (
+                          <MenuItem key={user.id} value={user.id}>
+                            {user.name}
+                          </MenuItem>
+                        ))
+                      : []}
+                  </Select>
+                </FormControl>
+              </>
+            ) : (
+              <>
+                <TextField
+                  sx={{
+                    marginY: 1,
+                    width: "87%",
+                    maxWidth: "400px",
+                    color: "primary",
+                  }}
+                  label="Email"
+                  disabled={sendOTPQueryIsFetching || loginQueryIsFetching}
+                  {...formRegister("email", {
+                    required: {
+                      value: loginType.using === "email",
+                      message: "Please enter an email.",
+                    },
+                    pattern: {
+                      value:
+                        /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/,
+                      message: "Please enter a valid email.",
+                    },
+                    onChange: (e) => {
+                      setEmail(e.target.value);
+                      if (!errors.email) {
+                        setQueries((prevQueries) => ({
+                          ...prevQueries,
+                          getUserIdByEmailQuery: {
+                            ...prevQueries.getUserIdByEmailQuery,
+                            enabled: true,
+                          },
+                        }));
+                        queryClient.removeQueries({
+                          queryKey: queries.getUserIdByEmailQuery.queryKey,
+                          exact: true,
+                        });
+                      }
+                    },
+                  })}
+                  error={!!errors.email}
+                  helperText={
+                    !!errors.email
+                      ? errors.email?.message
+                      : getUserIdByEmailQueryIsError &&
+                        getUserIdByEmailQueryError?.response?.status === 404 &&
+                        getUserIdByEmailQueryError?.response?.data?.detail ===
+                          "User not found"
+                      ? "User with this email does not exist. Please register first."
+                      : null
+                  }
+                />
+              </>
+            )}
+            {loginType.secret === "otp" ? (
               <TextField
                 sx={{
                   marginY: 1,
@@ -490,7 +561,7 @@ export const Login = () => {
                 }
                 {...formRegister("otp", {
                   required: {
-                    value: loginType === "otp",
+                    value: loginType.secret === "otp",
                     message: "Please enter an OTP.",
                   },
                   valueAsNumber: true,
@@ -503,6 +574,66 @@ export const Login = () => {
                 })}
                 error={!!errors.otp}
                 helperText={errors.otp?.message}
+                InputProps={
+                  loginType.secret === "otp"
+                    ? {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            {!otpProps.sendAgain && otpProps.sent ? (
+                              <Timer expiryTimestamp={otpProps.time}>
+                                {(minutes, seconds, isRunning) => {
+                                  if (isRunning) {
+                                    return (
+                                      <Chip
+                                        sx={{ color: "primary" }}
+                                        label={`Resend in ${minutes}:${seconds}`}
+                                        disabled={true}
+                                      />
+                                    );
+                                  } else {
+                                    setOtpProps((prevProps) => ({
+                                      ...prevProps,
+                                      sendAgain: true,
+                                      time: null,
+                                    }));
+
+                                    queryClient.removeQueries({
+                                      queryKey: queries.sendOTPQuery.queryKey,
+                                      exact: true,
+                                    });
+                                  }
+                                }}
+                              </Timer>
+                            ) : (
+                              <Chip
+                                sx={{ color: "primary" }}
+                                label={
+                                  sendOTPQueryIsFetching
+                                    ? "Sending..."
+                                    : otpProps.sent
+                                    ? "Resend OTP"
+                                    : "Send OTP"
+                                }
+                                disabled={
+                                  userId === null || sendOTPQueryIsFetching
+                                }
+                                clickable={!sendOTPQueryIsFetching}
+                                onClick={() =>
+                                  setQueries((prevQueries) => ({
+                                    ...prevQueries,
+                                    sendOTPQuery: {
+                                      ...prevQueries.sendOTPQuery,
+                                      enabled: true,
+                                    },
+                                  }))
+                                }
+                              />
+                            )}
+                          </InputAdornment>
+                        ),
+                      }
+                    : {}
+                }
               />
             ) : (
               <TextField
@@ -517,7 +648,7 @@ export const Login = () => {
                 disabled={userId === null}
                 {...formRegister("password", {
                   required: {
-                    value: loginType === "password",
+                    value: !(loginType.secret === "otp"),
                     message: "Please enter a password.",
                   },
                 })}
@@ -584,9 +715,10 @@ export const Login = () => {
               <Button
                 variant="outlined"
                 onClick={() =>
-                  setLoginType((prevLoginType) =>
-                    prevLoginType === "otp" ? "password" : "otp"
-                  )
+                  setLoginType((prevLoginType) => ({
+                    ...prevLoginType,
+                    secret: prevLoginType.secret === "otp" ? "password" : "otp",
+                  }))
                 }
                 sx={{
                   marginTop: { xs: 0.5, sm: 0.5, md: 1 },
@@ -595,7 +727,7 @@ export const Login = () => {
                   color: "primary",
                 }}
               >
-                {loginType === "otp" ? (
+                {loginType.secret === "otp" ? (
                   <>Login with Password</>
                 ) : (
                   <>Login with OTP</>
