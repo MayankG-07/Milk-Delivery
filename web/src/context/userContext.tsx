@@ -1,16 +1,27 @@
-/* eslint-disable no-unused-vars */
 import { createContext, useState } from "react";
-import { PropTypes } from "prop-types";
 import axios from "axios";
 import { url } from "./../assets/res";
+import {
+  detailsTypes,
+  fetchNewUserDetailsProps,
+  tokenDataTypes,
+  verifyTokenDataProps,
+} from "../types/userContext.types";
 
 export const MILK_DELIVERY_USER = "MILK_DELIVERY_USER";
+type initialContext = {
+  userDetails: detailsTypes | null;
+  fetchNewUserDetails: (props: fetchNewUserDetailsProps) => void;
+  verifyTokenData: (props?: verifyTokenDataProps) => void;
+};
 
-export const UserContext = createContext({
+const initialContextValue: initialContext = {
   userDetails: null,
-  fetchNewUserDetails: ({ _logout, _userid, _token_data }) => {},
-  verifyTokenData: (_passedTokenParams) => {},
-});
+  fetchNewUserDetails: ({ logout: _logout, userid: _userid }) => {},
+  verifyTokenData: (_props?) => {},
+};
+
+export const UserContext = createContext(initialContextValue);
 
 // stored object = {
 //   userid: int,
@@ -20,15 +31,23 @@ export const UserContext = createContext({
 //   }
 // }
 
-export const UserContextProvider = ({ children }) => {
+export const UserContextProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const prevDetails = localStorage.getItem(MILK_DELIVERY_USER);
-  const [details, setDetails] = useState(
+  const [details, setDetails] = useState<detailsTypes | null>(
     prevDetails !== undefined && prevDetails !== null
       ? JSON.parse(prevDetails)
       : null
   );
 
-  const fetchNewUserDetails = async ({ logout, userid }) => {
+  const fetchNewUserDetails = async ({
+    logout,
+    userid,
+  }: fetchNewUserDetailsProps) => {
+    console.log(logout, userid);
     if (!logout) {
       await axios({
         method: "GET",
@@ -36,12 +55,10 @@ export const UserContextProvider = ({ children }) => {
         params: { userid },
       })
         .then((res) => {
-          // console.log(res);
-          // console.log(localStorage.getItem(MILK_DELIVERY_USER));
           const prevData =
             localStorage.getItem(MILK_DELIVERY_USER) !== undefined &&
             localStorage.getItem(MILK_DELIVERY_USER) !== null
-              ? JSON.parse(localStorage.getItem(MILK_DELIVERY_USER))
+              ? JSON.parse(localStorage.getItem(MILK_DELIVERY_USER)!)
               : null;
 
           // console.log(prevData);
@@ -63,6 +80,8 @@ export const UserContextProvider = ({ children }) => {
         .catch((err) => {
           if (err.response.status === 404) {
             localStorage.removeItem(MILK_DELIVERY_USER);
+          } else {
+            console.log(err);
           }
         });
     } else {
@@ -71,8 +90,8 @@ export const UserContextProvider = ({ children }) => {
     }
   };
 
-  const verifyTokenData = async (passedTokenParams) => {
-    let token_data;
+  const verifyTokenData = async (passedTokenParams?: verifyTokenDataProps) => {
+    let token_data: tokenDataTypes | undefined;
     if (passedTokenParams === undefined || passedTokenParams === null) {
       const item = localStorage.getItem(MILK_DELIVERY_USER);
       if (item !== undefined && item !== null) {
@@ -94,8 +113,11 @@ export const UserContextProvider = ({ children }) => {
         params: { token: token_data.access_token },
       })
         .then((_res) => {
-          setDetails((prevDetails) => ({ ...prevDetails, token_data }));
-          const data = JSON.parse(localStorage.getItem(MILK_DELIVERY_USER));
+          setDetails((prevDetails: detailsTypes) => ({
+            ...prevDetails!,
+            token_data,
+          }));
+          const data = JSON.parse(localStorage.getItem(MILK_DELIVERY_USER)!);
           localStorage.setItem(
             MILK_DELIVERY_USER,
             JSON.stringify({ ...data, token_data })
@@ -103,8 +125,11 @@ export const UserContextProvider = ({ children }) => {
         })
         .catch((err) => {
           if (err.response.status === 401) {
-            setDetails((prevDetails) => ({ ...prevDetails, token_data: null }));
-            const data = JSON.parse(localStorage.getItem(MILK_DELIVERY_USER));
+            setDetails((prevDetails: detailsTypes) => ({
+              ...prevDetails!,
+              token_data: null,
+            }));
+            const data = JSON.parse(localStorage.getItem(MILK_DELIVERY_USER)!);
             localStorage.setItem(
               MILK_DELIVERY_USER,
               JSON.stringify({ ...data, token_data: null })
@@ -125,8 +150,4 @@ export const UserContextProvider = ({ children }) => {
   return (
     <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
   );
-};
-
-UserContextProvider.propTypes = {
-  children: PropTypes.node,
 };

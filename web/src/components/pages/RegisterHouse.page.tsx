@@ -12,19 +12,24 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useContext, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { url } from "../../assets/res";
 import { DevTool } from "@hookform/devtools";
 import { AlertDialog } from "../misc/AlertDialog";
 import { UserContext } from "../../context/userContext";
 import { SessionExpiredAlert } from "../misc/SessionExpiredAlert";
 import { useNavigate } from "react-router-dom";
+import {
+  RegisterHouseFormValues,
+  registerHouseQueryData,
+} from "../../types/RegisterHouse.types";
+import { getHouseIdQueryData } from "../../types/RegisterHouse.types";
 
 export const RegisterHouse = () => {
-  const [wing, setWing] = useState(null);
-  const [houseno, setHouseno] = useState(null);
+  const [wing, setWing] = useState<"a" | "b" | null>(null);
+  const [houseno, setHouseno] = useState<number | null>(null);
 
   const { userDetails, fetchNewUserDetails, verifyTokenData } =
     useContext(UserContext);
@@ -43,14 +48,17 @@ export const RegisterHouse = () => {
       isSubmitSuccessful,
     },
     reset: formReset,
-  } = useForm({ mode: "onChange" });
+  } = useForm<RegisterHouseFormValues>({ mode: "onChange" });
 
   const queryClient = useQueryClient();
 
   const [queries, setQueries] = useState({
     getHouseIdQuery: {
       queryKey: ["getHouseId"],
-      queryFn: async (wing, houseno) => {
+      queryFn: async (
+        wing: "a" | "b",
+        houseno: number
+      ): Promise<getHouseIdQueryData> => {
         return await axios({
           method: "GET",
           url: `${url}/house/details`,
@@ -65,7 +73,10 @@ export const RegisterHouse = () => {
     },
     registerHouseQuery: {
       queryKey: ["registerHouse"],
-      queryFn: async (wing, houseno) => {
+      queryFn: async (
+        wing: "a" | "b",
+        houseno: number
+      ): Promise<registerHouseQueryData> => {
         return await axios({
           method: "POST",
           url: `${url}/house/register`,
@@ -98,14 +109,19 @@ export const RegisterHouse = () => {
   ] = [
     useQuery({
       queryKey: queries.getHouseIdQuery.queryKey,
-      queryFn: async () => await queries.getHouseIdQuery.queryFn(wing, houseno),
+      queryFn: async () => {
+        if (wing !== null && houseno !== null) {
+          return await queries.getHouseIdQuery.queryFn(wing, houseno);
+        }
+      },
       enabled: queries.getHouseIdQuery.enabled,
       refetchOnWindowFocus: false,
       retry: false,
       onError: (err) => {
         if (
-          (err.response.status === 404) &
-          (err.response.data.detail === "House not found")
+          err instanceof AxiosError &&
+          err.response?.status === 404 &&
+          err.response?.data?.detail === "House not found"
         ) {
           setQueries((prevQueries) => ({
             ...prevQueries,
@@ -119,15 +135,18 @@ export const RegisterHouse = () => {
     }),
     useQuery({
       queryKey: queries.registerHouseQuery.queryKey,
-      queryFn: async () =>
-        await queries.registerHouseQuery.queryFn(wing, houseno),
+      queryFn: async () => {
+        if (wing !== null && houseno !== null) {
+          return await queries.registerHouseQuery.queryFn(wing, houseno);
+        }
+      },
       enabled: queries.registerHouseQuery.enabled,
       refetchOnWindowFocus: false,
       retry: false,
     }),
   ];
 
-  const onSubmit = () => {
+  const onSubmit: SubmitHandler<RegisterHouseFormValues> = (_formData) => {
     verifyTokenData();
     if (userDetails !== null) {
       setQueries((prevQueries) => ({
@@ -174,7 +193,7 @@ export const RegisterHouse = () => {
               row
               value={wing}
               onChange={(e) => {
-                setWing(e.target.value);
+                setWing(e.target.value === "a" ? "a" : "b");
               }}
             >
               <FormControlLabel label="A" value="a" control={<Radio />} />
@@ -213,9 +232,7 @@ export const RegisterHouse = () => {
                   }
                 },
                 validate: (value) =>
-                  isNaN(parseInt(value))
-                    ? "Please enter a valid house number."
-                    : true,
+                  isNaN(value) ? "Please enter a valid house number." : true,
               })}
               error={!!errors.houseno}
               helperText={errors.houseno?.message}
@@ -276,7 +293,7 @@ export const RegisterHouse = () => {
         content={
           <Typography variant="body2">
             {`The house ${wing?.toUpperCase()}-${houseno} already exists. Please
-            check the details that you have entered.`}
+              check the details that you have entered.`}
           </Typography>
         }
         showActions={true}
@@ -308,7 +325,7 @@ export const RegisterHouse = () => {
         content={
           <Typography variant="body2">
             {`The house ${wing?.toUpperCase()}-${houseno} has been registered successfully. You can now add members
-            to your house.`}
+              to your house.`}
           </Typography>
         }
         showActions={true}

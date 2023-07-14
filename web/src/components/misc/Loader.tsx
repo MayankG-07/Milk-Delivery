@@ -1,9 +1,8 @@
-import { PropTypes } from "prop-types";
 import { LinearProgress, Box } from "@mui/material";
 import { AlertDialog } from "./AlertDialog";
+import { LoaderProps } from "../../types/Loader.types";
 
-export const Loader = ({ loading }) => {
-  // console.log(loading);
+export const Loader = ({ loading }: LoaderProps) => {
   return (
     <AlertDialog
       open={loading}
@@ -15,8 +14,4 @@ export const Loader = ({ loading }) => {
       }
     />
   );
-};
-
-Loader.propTypes = {
-  loading: PropTypes.bool.isRequired,
 };
