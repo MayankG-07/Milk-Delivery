@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // import { DevTool } from "@hookform/devtools";
 import {
   Box,
@@ -20,31 +19,53 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useContext, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Timer } from "../misc/Timer";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import {
+  UseQueryResult,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import axios, { AxiosError } from "axios";
 import { url } from "../../assets/res";
 import { AlertDialog } from "../misc/AlertDialog";
 import { UserContext } from "../../context/userContext";
+import {
+  LoginFormValues,
+  getHouseIdQueryData,
+  getUserIdByEmailQueryData,
+  getUserNamesQueryData,
+  loginQueryData,
+} from "../../types/Login.types";
 
 export const Login = () => {
   const { userDetails, fetchNewUserDetails, verifyTokenData } =
     useContext(UserContext);
 
-  const [wing, setWing] = useState(null);
-  const [houseno, setHouseno] = useState(null);
-  const [email, setEmail] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [loginType, setLoginType] = useState({ secret: "otp", using: "house" });
-  const [showPassword, setShowPassword] = useState(false);
-  const [otpProps, setOtpProps] = useState({
+  const [wing, setWing] = useState<"a" | "b" | null>(null);
+  const [houseno, setHouseno] = useState<number | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number>(NaN);
+  const [loginType, setLoginType] = useState<{
+    secret: "otp" | "password";
+    using: "house" | "email";
+  }>({ secret: "otp", using: "house" });
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [otpProps, setOtpProps] = useState<{
+    sent: boolean;
+    sendAgain: boolean;
+    time: Date | null;
+  }>({
     sent: false,
     sendAgain: false,
     time: null,
   });
-  const [loginData, setLoginData] = useState(null);
+  const [loginData, setLoginData] = useState<{
+    userid: number;
+    otp?: number;
+    password?: string;
+  }>({ userid: NaN });
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -61,12 +82,15 @@ export const Login = () => {
       isSubmitSuccessful,
     },
     reset: formReset,
-  } = useForm({ mode: "onChange" });
+  } = useForm<LoginFormValues>({ mode: "onChange" });
 
   const [queries, setQueries] = useState({
     getHouseIdQuery: {
       queryKey: ["getHouseId"],
-      queryFn: async (wing, houseno) => {
+      queryFn: async (
+        wing: "a" | "b",
+        houseno: number
+      ): Promise<getHouseIdQueryData> => {
         return await axios({
           method: "GET",
           url: `${url}/house/details`,
@@ -74,20 +98,23 @@ export const Login = () => {
             wing,
             houseno,
           },
-        });
+        }).then((res) => res.data);
       },
       resultData: null,
       enabled: false,
     },
     getUserIdByEmailQuery: {
       queryKey: ["getUserIdByEmail"],
-      queryFn: async (email) => {
+      queryFn: async (email: string): Promise<getUserIdByEmailQueryData> => {
         return await axios({
           method: "GET",
           url: `${url}/user/details`,
           params: {
             email,
           },
+        }).then((res) => {
+          setUserId(res.data.userid);
+          return res.data;
         });
       },
       resultData: null,
@@ -95,9 +122,11 @@ export const Login = () => {
     },
     getUserNamesQuery: {
       queryKey: ["getUserNames"],
-      queryFn: async (userIds) => {
-        let users = [];
-        userIds.forEach((userId) => users.push({ id: userId, name: null }));
+      queryFn: async (
+        userIds: number[] | undefined
+      ): Promise<getUserNamesQueryData> => {
+        let users: getUserNamesQueryData = [];
+        userIds?.forEach((userId) => users.push({ id: userId, name: "" }));
         for (let i = 0; i < users.length; i++) {
           await axios({
             method: "GET",
@@ -117,7 +146,7 @@ export const Login = () => {
     },
     sendOTPQuery: {
       queryKey: ["sendOTP"],
-      queryFn: async (userid) => {
+      queryFn: async (userid: number): Promise<void> => {
         return await axios({
           method: "POST",
           url: `${url}/user/send-otp`,
@@ -129,10 +158,14 @@ export const Login = () => {
     },
     loginQuery: {
       queryKey: ["login"],
-      queryFn: async (loginData) => {
+      queryFn: async (loginData: {
+        userid: number;
+        otp?: number;
+        password?: string;
+      }): Promise<loginQueryData> => {
         const { userid, otp, password } = loginData;
 
-        let passwordString;
+        let passwordString: string;
         if (password === undefined || password === null) {
           passwordString = JSON.stringify({ type: "otp", otp });
         } else {
@@ -140,7 +173,7 @@ export const Login = () => {
         }
 
         let bodyFormData = new FormData();
-        bodyFormData.append("username", userid);
+        bodyFormData.append("username", userid.toString());
         bodyFormData.append("password", passwordString);
 
         return await axios({
@@ -148,7 +181,7 @@ export const Login = () => {
           url: `${url}/user/login`,
           data: bodyFormData,
           headers: { "Content-Type": "multipart/form-data" },
-        });
+        }).then((res) => res.data);
       },
       resultData: null,
       enabled: false,
@@ -194,12 +227,19 @@ export const Login = () => {
   ] = [
     useQuery({
       queryKey: queries.getHouseIdQuery.queryKey,
-      queryFn: async () => await queries.getHouseIdQuery.queryFn(wing, houseno),
+      queryFn: async () => {
+        if (wing !== null && houseno !== null) {
+          return await queries.getHouseIdQuery.queryFn(wing, houseno);
+        } else {
+          const sample: getHouseIdQueryData = {};
+          return Promise.resolve(sample);
+        }
+      },
       enabled: queries.getHouseIdQuery.enabled,
       refetchOnWindowFocus: false,
       retry: false,
       onError: (_err) => {
-        setUserId(null);
+        setUserId(NaN);
         setQueries((prevQueries) => ({
           ...prevQueries,
           getUserNamesQuery: {
@@ -213,7 +253,6 @@ export const Login = () => {
         setOtpProps({ sent: false, sendAgain: false, time: null });
       },
       onSuccess: (_res) => {
-        // setUserIds(res.data.members);
         setQueries((prevQueries) => ({
           ...prevQueries,
           getUserNamesQuery: {
@@ -225,19 +264,31 @@ export const Login = () => {
     }),
     useQuery({
       queryKey: queries.getUserIdByEmailQuery.queryKey,
-      queryFn: async () => await queries.getUserIdByEmailQuery.queryFn(email),
+      queryFn: async () => {
+        if (email !== null) {
+          return await queries.getUserIdByEmailQuery.queryFn(email);
+        } else {
+          const sample: getUserIdByEmailQueryData = {};
+          return Promise.resolve(sample);
+        }
+      },
       enabled: queries.getUserIdByEmailQuery.enabled,
       refetchOnWindowFocus: false,
       retry: false,
-      onSuccess: (res) => setUserId(res.data.userid),
-      onError: (_err) => setUserId(null),
+      onError: (_err) => setUserId(NaN),
     }),
     useQuery({
       queryKey: queries.getUserNamesQuery.queryKey,
-      queryFn: async () =>
-        await queries.getUserNamesQuery.queryFn(
-          getHouseIdQueryData?.data?.members
-        ),
+      queryFn: async (): Promise<getUserNamesQueryData> => {
+        if (getHouseIdQueryData !== undefined) {
+          return await queries.getUserNamesQuery.queryFn(
+            getHouseIdQueryData.members
+          );
+        } else {
+          const sample: getUserNamesQueryData = [];
+          return Promise.resolve(sample);
+        }
+      },
       enabled: queries.getUserNamesQuery.enabled,
       refetchOnWindowFocus: false,
       retry: false,
@@ -245,7 +296,13 @@ export const Login = () => {
     }),
     useQuery({
       queryKey: queries.sendOTPQuery.queryKey,
-      queryFn: async () => queries.sendOTPQuery.queryFn(userId),
+      queryFn: async () => {
+        if (!isNaN(userId)) {
+          return await queries.sendOTPQuery.queryFn(userId);
+        } else {
+          return Promise.resolve();
+        }
+      },
       enabled: queries.sendOTPQuery.enabled,
       refetchOnWindowFocus: false,
       retry: false,
@@ -271,31 +328,39 @@ export const Login = () => {
     }),
     useQuery({
       queryKey: queries.loginQuery.queryKey,
-      queryFn: async () => await queries.loginQuery.queryFn(loginData),
+      queryFn: async () => {
+        if (loginData !== null && loginData.userid !== null) {
+          return await queries.loginQuery.queryFn(loginData);
+        } else {
+          const sample: loginQueryData = {};
+          return Promise.resolve(sample);
+        }
+      },
       enabled: queries.loginQuery.enabled,
       refetchOnWindowFocus: false,
       retry: false,
       onError: (err) => console.log(err),
-      onSuccess: (res) => {
-        console.log(res.data);
-        fetchNewUserDetails({ userid: res.data.userid });
-        verifyTokenData({ token_data: res.data.token_data });
+      onSuccess: (data) => {
+        fetchNewUserDetails({ userid: data.userid });
+        verifyTokenData({ token_data: data.token_data });
         navigate("/dashboard");
       },
     }),
   ];
 
-  const onSubmit = (formData) => {
+  const onSubmit: SubmitHandler<LoginFormValues> = (formData) => {
     const { otp, password } = formData;
-    setLoginData(
-      loginType.secret === "otp"
-        ? { userid: userId, otp }
-        : { userid: userId, password }
-    );
-    setQueries((prevQueries) => ({
-      ...prevQueries,
-      loginQuery: { ...prevQueries.loginQuery, enabled: true },
-    }));
+    if (!isNaN(userId)) {
+      setLoginData(
+        loginType.secret === "otp"
+          ? { userid: userId, otp, password }
+          : { userid: userId, password, otp }
+      );
+      setQueries((prevQueries) => ({
+        ...prevQueries,
+        loginQuery: { ...prevQueries.loginQuery, enabled: true },
+      }));
+    }
   };
 
   return (
@@ -339,7 +404,7 @@ export const Login = () => {
               onChange={(e) => {
                 setLoginType((prevLoginType) => ({
                   ...prevLoginType,
-                  using: e.target.value,
+                  using: e.target.value === "house" ? "house" : "email",
                 }));
               }}
             >
@@ -376,8 +441,8 @@ export const Login = () => {
                 row
                 value={wing}
                 onChange={(e) => {
-                  setWing(e.target.value);
-                  if (houseno !== null && !isNaN(houseno) && houseno !== "") {
+                  setWing(e.target.value === "a" ? "a" : "b");
+                  if (houseno !== null && !isNaN(houseno)) {
                     setQueries((prevQueries) => ({
                       ...prevQueries,
                       getHouseIdQuery: {
@@ -434,8 +499,7 @@ export const Login = () => {
                         if (
                           wing !== null &&
                           houseno !== null &&
-                          !isNaN(houseno) &&
-                          houseno !== ""
+                          !isNaN(houseno)
                         ) {
                           setQueries((prevQueries) => ({
                             ...prevQueries,
@@ -451,10 +515,10 @@ export const Login = () => {
                         }
                       }
                     },
-                    validate: (value) =>
-                      isNaN(parseInt(value))
-                        ? "Please enter a valid house number."
-                        : true,
+                    // validate: (value) =>
+                    //   isNaN(parseInt(value))
+                    //     ? "Please enter a valid house number."
+                    //     : true,
                   })}
                   error={!!errors.houseno}
                   helperText={errors.houseno?.message}
@@ -482,12 +546,12 @@ export const Login = () => {
                         ? "Loading members..."
                         : "Enter a valid house no to select member"
                     }
-                    value={userId === null ? "" : userId}
-                    onChange={(e) => setUserId(e.target.value)}
+                    value={isNaN(userId) ? "" : userId}
+                    onChange={(e) => setUserId(e.target.value as number)}
                   >
                     {getUserNamesQueryData !== undefined
                       ? getUserNamesQueryData.map((user) => (
-                          <MenuItem key={user.id} value={user.id}>
+                          <MenuItem key={user.id!} value={user.id!}>
                             {user.name}
                           </MenuItem>
                         ))
@@ -538,6 +602,7 @@ export const Login = () => {
                     !!errors.email
                       ? errors.email?.message
                       : getUserIdByEmailQueryIsError &&
+                        getUserIdByEmailQueryError instanceof AxiosError &&
                         getUserIdByEmailQueryError?.response?.status === 404 &&
                         getUserIdByEmailQueryError?.response?.data?.detail ===
                           "User not found"
@@ -566,9 +631,8 @@ export const Login = () => {
                   },
                   valueAsNumber: true,
                   validate: (value) =>
-                    isNaN(parseInt(value)) ||
-                    parseInt(value) < 1111 ||
-                    parseInt(value) > 9999
+                    // isNaN(parseInt(value)) ||
+                    value! < 1111 || value! > 9999
                       ? "Please enter a valid OTP."
                       : true,
                 })}
@@ -580,7 +644,7 @@ export const Login = () => {
                         endAdornment: (
                           <InputAdornment position="end">
                             {!otpProps.sendAgain && otpProps.sent ? (
-                              <Timer expiryTimestamp={otpProps.time}>
+                              <Timer expiryTimestamp={otpProps.time!}>
                                 {(minutes, seconds, isRunning) => {
                                   if (isRunning) {
                                     return (
@@ -615,7 +679,7 @@ export const Login = () => {
                                     : "Send OTP"
                                 }
                                 disabled={
-                                  userId === null || sendOTPQueryIsFetching
+                                  isNaN(userId) || sendOTPQueryIsFetching
                                 }
                                 clickable={!sendOTPQueryIsFetching}
                                 onClick={() =>
@@ -645,10 +709,10 @@ export const Login = () => {
                 }}
                 label="Password"
                 type={showPassword ? "text" : "password"}
-                disabled={userId === null}
+                disabled={isNaN(userId)}
                 {...formRegister("password", {
                   required: {
-                    value: !(loginType.secret === "otp"),
+                    value: loginType.secret === "password",
                     message: "Please enter a password.",
                   },
                 })}
@@ -657,7 +721,7 @@ export const Login = () => {
                     <InputAdornment position="end">
                       <IconButton
                         edge="end"
-                        disabled={userId === null}
+                        disabled={isNaN(userId)}
                         onClick={() => setShowPassword((prevShow) => !prevShow)}
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
@@ -754,7 +818,8 @@ export const Login = () => {
           title="Log in failed"
           content={
             <Typography variant="body2">
-              {loginQueryError?.response?.status === 400
+              {loginQueryError instanceof AxiosError &&
+              loginQueryError?.response?.status === 400
                 ? loginQueryError?.response?.data.detail === "Invalid data"
                   ? "An error occurred. Please try again after sometime."
                   : "The credentials that you entered are incorrect. Please check them again and try again."
@@ -768,7 +833,7 @@ export const Login = () => {
               onclick: () => {
                 formReset();
                 setWing(null);
-                setUserId(null);
+                setUserId(NaN);
                 setQueries((prevQueries) => ({
                   ...prevQueries,
                   getHouseIdQuery: {

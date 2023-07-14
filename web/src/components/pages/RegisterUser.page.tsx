@@ -11,13 +11,13 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import axios from "axios";
 import { url } from "./../../assets/res";
 import { useNavigate } from "react-router-dom";
 import { AlertDialog } from "../misc/AlertDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FetchError } from "../../errors/fetchError";
+import { RegisterUserFormValues } from "../../types/RegisterUser.types";
 
 export const RegisterUser = () => {
   const fetchRegisterUser = async () => {
@@ -25,12 +25,6 @@ export const RegisterUser = () => {
       method: "POST",
       url: `${url}/user/register`,
       data: queries.registerUserQuery.data,
-    }).then((res) => {
-      if (res.status === 201) {
-        return res.data;
-      } else {
-        throw new FetchError(res);
-      }
     });
   };
 
@@ -64,14 +58,14 @@ export const RegisterUser = () => {
     queryFn: fetchRegisterUser,
     enabled: queries.registerUserQuery.enabled,
     refetchOnWindowFocus: false,
-    onError: (err) => {
-      console.log(err.response?.status);
-      console.log(err.response?.data.detail);
-      // setError("errorBlock", {
-      //   type: "api-error",
-      //   message: JSON.stringify(err.data),
-      // });
-    },
+    // onError: (err) => {
+    //   console.log(err.response?.status);
+    //   console.log(err.response?.data.detail);
+    //   setError("errorBlock", {
+    //     type: "api-error",
+    //     message: JSON.stringify(err.data),
+    //   });
+    // },
   });
 
   const navigate = useNavigate();
@@ -89,9 +83,9 @@ export const RegisterUser = () => {
     },
     // setError,
     reset,
-  } = useForm({ mode: "onChange" });
+  } = useForm<RegisterUserFormValues>({ mode: "onChange" });
 
-  const onSubmit = async (formData) => {
+  const onSubmit: SubmitHandler<RegisterUserFormValues> = async (formData) => {
     setQueries((prevQueries) => ({
       ...prevQueries,
       registerUserQuery: {
@@ -170,22 +164,20 @@ export const RegisterUser = () => {
                   message: "Please enter a valid email",
                 },
                 validate: async (value) => {
-                  let found;
+                  let found: boolean = false;
                   await axios({
                     method: "GET",
                     url: `${url}/user/details`,
                     params: { email: value },
                   })
                     .then((res) => {
-                      found = true
-                        ? res.status === 200 && res.data.userid
-                        : found;
+                      found = res.status === 200 && res.data.userid;
                     })
                     .catch((err) => {
-                      found = false
-                        ? err.response.status === 404 &&
-                          err.response.data.detail === "User not found"
-                        : found;
+                      found = !(
+                        err.response.status === 404 &&
+                        err.response.data.detail === "User not found"
+                      );
                     });
 
                   return found ? "User with this email already exists" : true;
@@ -213,22 +205,20 @@ export const RegisterUser = () => {
                 },
                 validate: {
                   fetchPhone: async (value) => {
-                    let found;
+                    let found: boolean = false;
                     await axios({
                       method: "GET",
                       url: `${url}/user/details`,
                       params: { phone: value.toString() },
                     })
                       .then((res) => {
-                        found = true
-                          ? res.status === 200 && res.data.userid
-                          : found;
+                        found = res.status === 200 && res.data.userid;
                       })
                       .catch((err) => {
-                        found = false
-                          ? err.response.status === 404 &&
-                            err.response.data.detail === "User not found"
-                          : found;
+                        found = !(
+                          err.response.status === 404 &&
+                          err.response.data.detail === "User not found"
+                        );
                       });
 
                     return found ? "User with this phone already exists" : true;
@@ -419,18 +409,15 @@ export const RegisterUser = () => {
         actions={[
           {
             text: "OK",
-            onclick: "closeDialog",
+            onclick: () => {
+              queryClient.removeQueries({
+                queryKey: queries.registerUserQuery.queryKey,
+                exact: true,
+              });
+              navigate("/login");
+            },
           },
         ]}
-        onClose={() => {
-          // window.location.reload();
-          // setRegistered(true);
-          queryClient.removeQueries({
-            queryKey: queries.registerUserQuery.queryKey,
-            exact: true,
-          });
-          navigate("/login");
-        }}
       />
 
       <AlertDialog
@@ -458,11 +445,6 @@ export const RegisterUser = () => {
                   ...prevQueries.registerUserQuery,
                   enabled: false,
                   data: { name: "", email: "", phone: "", password: "" },
-                },
-                validateEmailQuery: {
-                  ...prevQueries.validateEmailQuery,
-                  enabled: false,
-                  params: { email: "" },
                 },
               }));
               queryClient.removeQueries({

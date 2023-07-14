@@ -19,12 +19,11 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "./../../context/userContext";
+import { NavbarProps } from "../../types/Navbar.types";
 
 const drawerWidth = 250;
-// const navItems = ["Home", "Login"];
-// const paths = ["/home", "/login"];
 
-export const Navbar = (props) => {
+export const Navbar = (props: NavbarProps) => {
   const { window } = props;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
@@ -40,14 +39,6 @@ export const Navbar = (props) => {
         "token_data" in userDetails
     );
   }, [userDetails]);
-
-  // console.log(userDetails);
-  // console.log(loggedIn);
-  // const verified = loggedIn ? userDetails.verified : null;
-
-  //   const handleNavigate = (item) => {
-  //     navigate(paths[navItems.indexOf(item)]);
-  //   };
 
   const handleDrawerToggle = () => {
     setMobileOpen((prevState) => !prevState);
