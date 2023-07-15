@@ -27,7 +27,8 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
+import { AxiosError } from "axios";
 import { url } from "../../assets/res";
 import { AlertDialog } from "../misc/AlertDialog";
 import { UserContext } from "../../context/userContext";
