@@ -18,7 +18,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { url } from "../../assets/res";
 import { DevTool } from "@hookform/devtools";
 import { AlertDialog } from "../misc/AlertDialog";
-import { UserContext } from "../../context/userContext";
+import { AuthContext } from "../../context/authContext";
 import { SessionExpiredAlert } from "../misc/SessionExpiredAlert";
 import { useNavigate } from "react-router-dom";
 import {
@@ -32,7 +32,7 @@ export const RegisterHouse = () => {
   const [houseno, setHouseno] = useState<number | null>(null);
 
   const { userDetails, fetchNewUserDetails, verifyTokenData } =
-    useContext(UserContext);
+    useContext(AuthContext);
 
   const navigate = useNavigate();
 

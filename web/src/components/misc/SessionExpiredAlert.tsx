@@ -1,12 +1,12 @@
 import { useContext } from "react";
 import { AlertDialog } from "./AlertDialog";
-import { UserContext } from "../../context/userContext";
+import { AuthContext } from "../../context/authContext";
 import { Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 export const SessionExpiredAlert = () => {
   const navigate = useNavigate();
-  const { userDetails, fetchNewUserDetails } = useContext(UserContext);
+  const { userDetails, fetchNewUserDetails } = useContext(AuthContext);
 
   return (
     <AlertDialog

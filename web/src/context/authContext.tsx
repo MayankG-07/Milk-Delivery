@@ -1,6 +1,6 @@
 import { createContext, useState } from "react";
 import axios from "axios";
-import { url } from "./../assets/res";
+import { url } from "../assets/res";
 import {
   detailsTypes,
   fetchNewUserDetailsProps,
@@ -21,7 +21,7 @@ const initialContextValue: initialContext = {
   verifyTokenData: (_props?) => {},
 };
 
-export const UserContext = createContext(initialContextValue);
+export const AuthContext = createContext(initialContextValue);
 
 // stored object = {
 //   userid: int,
@@ -31,11 +31,7 @@ export const UserContext = createContext(initialContextValue);
 //   }
 // }
 
-export const UserContextProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const prevDetails = localStorage.getItem(MILK_DELIVERY_USER);
   const [details, setDetails] = useState<detailsTypes | null>(
     prevDetails !== undefined && prevDetails !== null
@@ -148,6 +144,6 @@ export const UserContextProvider = ({
   };
 
   return (
-    <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };
