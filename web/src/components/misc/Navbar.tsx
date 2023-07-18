@@ -1,5 +1,4 @@
 import { useState, useContext, useEffect } from "react";
-import PropTypes from "prop-types";
 import {
   AppBar,
   Box,
@@ -18,7 +17,7 @@ import {
 
 import MenuIcon from "@mui/icons-material/Menu";
 import { useNavigate } from "react-router-dom";
-import { UserContext } from "./../../context/userContext";
+import { AuthContext } from "../../context/authContext";
 import { NavbarProps } from "../../types/Navbar.types";
 
 const drawerWidth = 250;
@@ -30,7 +29,7 @@ export const Navbar = (props: NavbarProps) => {
 
   const navigate = useNavigate();
 
-  const { userDetails, fetchNewUserDetails } = useContext(UserContext);
+  const { userDetails, fetchNewUserDetails } = useContext(AuthContext);
 
   useEffect(() => {
     setLoggedIn(
@@ -46,7 +45,7 @@ export const Navbar = (props: NavbarProps) => {
 
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
-      <Typography variant="h6" sx={{ my: 2 }}>
+      <Typography variant="h5" sx={{ my: 2, textDecoration: "bold" }}>
         Milk Delivery
       </Typography>
       <Divider />
@@ -145,7 +144,7 @@ export const Navbar = (props: NavbarProps) => {
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      <AppBar component="nav">
+      <AppBar component="nav" sx={{ backgroundColor: "text.primary" }}>
         <Toolbar>
           <IconButton
             color="inherit"
@@ -158,12 +157,13 @@ export const Navbar = (props: NavbarProps) => {
           </IconButton>
           <Box sx={{ flexGrow: 1 }}>
             <Typography
-              variant="h6"
+              variant="h5"
               component="div"
               sx={{
                 display: { xs: "none", sm: "block" },
                 ml: 4,
                 mr: 3,
+                color: "background.default",
               }}
             >
               Milk Delivery
@@ -245,12 +245,4 @@ export const Navbar = (props: NavbarProps) => {
       </Box>
     </Box>
   );
-};
-
-Navbar.propTypes = {
-  /**
-   * Injected by the documentation to work in an iframe.
-   * You won't need it on your project.
-   */
-  window: PropTypes.func,
 };

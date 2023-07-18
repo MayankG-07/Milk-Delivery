@@ -1,6 +1,6 @@
 import { createContext, useState } from "react";
 import axios from "axios";
-import { url } from "./../assets/res";
+import { url } from "../assets/res";
 import {
   detailsTypes,
   fetchNewUserDetailsProps,
@@ -11,17 +11,18 @@ import {
 export const MILK_DELIVERY_USER = "MILK_DELIVERY_USER";
 type initialContext = {
   userDetails: detailsTypes | null;
-  fetchNewUserDetails: (props: fetchNewUserDetailsProps) => void;
-  verifyTokenData: (props?: verifyTokenDataProps) => void;
+  fetchNewUserDetails: (props: fetchNewUserDetailsProps) => Promise<void>;
+  verifyTokenData: (props?: verifyTokenDataProps) => Promise<void>;
 };
 
 const initialContextValue: initialContext = {
   userDetails: null,
-  fetchNewUserDetails: ({ logout: _logout, userid: _userid }) => {},
-  verifyTokenData: (_props?) => {},
+  fetchNewUserDetails: ({ logout: _logout, userid: _userid }) =>
+    Promise.resolve(),
+  verifyTokenData: (_props?) => Promise.resolve(),
 };
 
-export const UserContext = createContext(initialContextValue);
+export const AuthContext = createContext(initialContextValue);
 
 // stored object = {
 //   userid: int,
@@ -31,11 +32,7 @@ export const UserContext = createContext(initialContextValue);
 //   }
 // }
 
-export const UserContextProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const prevDetails = localStorage.getItem(MILK_DELIVERY_USER);
   const [details, setDetails] = useState<detailsTypes | null>(
     prevDetails !== undefined && prevDetails !== null
@@ -148,6 +145,6 @@ export const UserContextProvider = ({
   };
 
   return (
-    <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };

@@ -16,3 +16,13 @@ export const milk_types = {
 // export const url = urls.iitgn;
 // export const url = urls.home;
 export const url = urls.local;
+
+export const days = {
+  "0": { full: "Sunday", short: "Sun", avatar: "S" },
+  "1": { full: "Monday", short: "Mon", avatar: "M" },
+  "2": { full: "Tuesday", short: "Tue", avatar: "T" },
+  "3": { full: "Wednesday", short: "Wed", avatar: "W" },
+  "4": { full: "Thursday", short: "Thu", avatar: "Th" },
+  "5": { full: "Friday", short: "Fri", avatar: "F" },
+  "6": { full: "Saturday", short: "Sat", avatar: "S" },
+};

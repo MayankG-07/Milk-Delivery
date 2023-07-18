@@ -23,14 +23,15 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Timer } from "../misc/Timer";
 import {
-  UseQueryResult,
+  // UseQueryResult,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
+import { AxiosError } from "axios";
 import { url } from "../../assets/res";
 import { AlertDialog } from "../misc/AlertDialog";
-import { UserContext } from "../../context/userContext";
+import { AuthContext } from "../../context/authContext";
 import {
   LoginFormValues,
   getHouseIdQueryData,
@@ -40,8 +41,7 @@ import {
 } from "../../types/Login.types";
 
 export const Login = () => {
-  const { userDetails, fetchNewUserDetails, verifyTokenData } =
-    useContext(UserContext);
+  const { fetchNewUserDetails, verifyTokenData } = useContext(AuthContext);
 
   const [wing, setWing] = useState<"a" | "b" | null>(null);
   const [houseno, setHouseno] = useState<number | null>(null);
@@ -77,9 +77,9 @@ export const Login = () => {
     formState: {
       errors,
       isValid,
-      isSubmitting,
-      isSubmitted,
-      isSubmitSuccessful,
+      // isSubmitting,
+      // isSubmitted,
+      // isSubmitSuccessful,
     },
     reset: formReset,
   } = useForm<LoginFormValues>({ mode: "onChange" });
@@ -190,39 +190,39 @@ export const Login = () => {
 
   const [
     {
-      isFetching: getHouseIdQueryIsFetching,
+      // isFetching: getHouseIdQueryIsFetching,
       data: getHouseIdQueryData,
-      isError: getHouseIdQueryIsError,
-      error: getHouseIdQueryError,
-      isSuccess: getHouseIdQueryIsSuccess,
+      // isError: getHouseIdQueryIsError,
+      // error: getHouseIdQueryError,
+      // isSuccess: getHouseIdQueryIsSuccess,
     },
     {
-      isFetching: getUserIdByEmailQueryIsFetching,
-      data: getUserIdByEmailQueryData,
+      // isFetching: getUserIdByEmailQueryIsFetching,
+      // data: getUserIdByEmailQueryData,
       isError: getUserIdByEmailQueryIsError,
       error: getUserIdByEmailQueryError,
-      isSuccess: getUserIdByEmailQueryIsSuccess,
+      // isSuccess: getUserIdByEmailQueryIsSuccess,
     },
     {
       isFetching: getUserNamesQueryIsFetching,
       data: getUserNamesQueryData,
-      isError: getUserNamesQueryIsError,
-      error: getUserNamesQueryError,
-      isSuccess: getUserNamesQueryIsSuccess,
+      // isError: getUserNamesQueryIsError,
+      // error: getUserNamesQueryError,
+      // isSuccess: getUserNamesQueryIsSuccess,
     },
     {
       isFetching: sendOTPQueryIsFetching,
-      data: sendOTPQueryData,
-      isError: sendOTPQueryIsError,
-      error: sendOTPQueryError,
+      // data: sendOTPQueryData,
+      // isError: sendOTPQueryIsError,
+      // error: sendOTPQueryError,
       isSuccess: sendOTPQueryIsSuccess,
     },
     {
       isFetching: loginQueryIsFetching,
-      data: loginQueryData,
+      // data: loginQueryData,
       isError: loginQueryIsError,
       error: loginQueryError,
-      isSuccess: loginQueryIsSuccess,
+      // isSuccess: loginQueryIsSuccess,
     },
   ] = [
     useQuery({
@@ -340,10 +340,11 @@ export const Login = () => {
       refetchOnWindowFocus: false,
       retry: false,
       onError: (err) => console.log(err),
-      onSuccess: (data) => {
-        fetchNewUserDetails({ userid: data.userid });
-        verifyTokenData({ token_data: data.token_data });
+      onSuccess: async (data) => {
+        await fetchNewUserDetails({ userid: data.userid });
+        await verifyTokenData({ token_data: data.token_data });
         navigate("/dashboard");
+        // window.location.reload();
       },
     }),
   ];
@@ -370,8 +371,8 @@ export const Login = () => {
           display: "flex",
           flexDirection: "column",
           alignItems: { xs: "center", sm: "flex-start" },
-          marginTop: { xs: "22%", sm: 12 },
-          marginLeft: { sm: 10 },
+          marginTop: 12,
+          marginLeft: { sm: 8 },
         }}
       >
         <Typography sx={{ paddingY: 2 }} variant="h5">
@@ -645,7 +646,7 @@ export const Login = () => {
                           <InputAdornment position="end">
                             {!otpProps.sendAgain && otpProps.sent ? (
                               <Timer expiryTimestamp={otpProps.time!}>
-                                {(minutes, seconds, isRunning) => {
+                                {(isRunning, minutes, seconds) => {
                                   if (isRunning) {
                                     return (
                                       <Chip
@@ -788,7 +789,7 @@ export const Login = () => {
                   marginTop: { xs: 0.5, sm: 0.5, md: 1 },
                   width: "87%",
                   maxWidth: "400px",
-                  color: "primary",
+                  color: "primary.main",
                 }}
               >
                 {loginType.secret === "otp" ? (
@@ -797,21 +798,21 @@ export const Login = () => {
                   <>Login with OTP</>
                 )}
               </Button>
-
-              <Button
-                sx={{
-                  marginY: 1,
-                  width: "87%",
-                  maxWidth: "400px",
-                  color: "primary",
-                }}
-                onClick={() => navigate("/register/user")}
-              >
-                New User? Register Here
-              </Button>
             </Box>
           </Box>
         </form>
+
+        <Button
+          sx={{
+            marginY: 1,
+            width: "87%",
+            maxWidth: "400px",
+            color: "primary.main",
+          }}
+          onClick={() => navigate("/register/user")}
+        >
+          New User? Register Here
+        </Button>
 
         <AlertDialog
           open={loginQueryIsError}
