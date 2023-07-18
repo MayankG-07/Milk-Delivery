@@ -34,6 +34,15 @@ export const RegisterHouse = () => {
   const { userDetails, fetchNewUserDetails, verifyTokenData } =
     useContext(AuthContext);
 
+  const [loggedIn, setLoggedIn] = useState(true);
+  useEffect(() => {
+    setLoggedIn(
+      userDetails !== null &&
+        userDetails !== undefined &&
+        "token_data" in userDetails
+    );
+  }, [userDetails]);
+
   const navigate = useNavigate();
 
   const {
@@ -385,7 +394,7 @@ export const RegisterHouse = () => {
         ]}
       />
 
-      <SessionExpiredAlert />
+      <SessionExpiredAlert open={!loggedIn} />
 
       <DevTool control={control} />
     </>

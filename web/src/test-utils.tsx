@@ -1,6 +1,6 @@
 import { ReactElement } from "react";
 import { render, RenderOptions } from "@testing-library/react";
-import { AppProviders } from "./components/providers/AppProviders";
+import { AppProviders } from "./providers/AppProviders";
 
 const customRender = (
   ui: ReactElement,

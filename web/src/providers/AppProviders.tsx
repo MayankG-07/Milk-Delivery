@@ -2,8 +2,8 @@ import { BrowserRouter as Router } from "react-router-dom";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { ThemeProvider } from "@emotion/react";
 import { CssBaseline } from "@mui/material";
-import { theme } from "../../theme";
-import { AuthProvider } from "../../context/authContext";
+import { theme } from "../theme";
+import { AuthProvider } from "../context/authContext";
 
 const queryClient = new QueryClient();
 

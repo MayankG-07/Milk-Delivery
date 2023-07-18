@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user/login")
-ACCESS_TOKEN_EXPIRE_MINUTES = 60  # 60 minutes
+ACCESS_TOKEN_EXPIRE_MINUTES = 120  # 120 minutes
 REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 ALGORITHM = "HS256"
 with open(r"../assets/key", "r") as f:

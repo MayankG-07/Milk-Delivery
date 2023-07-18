@@ -83,3 +83,27 @@ async def query(query: str):
 async def verify_token(token: str):
     userid = get_current_user(token)
     return {"userid": userid}
+
+
+@app.get(
+    "/misc/milk-details/{milkid}",
+    summary="Get details of a particular milk",
+    status_code=200,
+)
+async def get_milk_details(milkid: int):
+    con = connect()
+    cursor = con.cursor()
+
+    cursor.execute(f"SELECT * FROM milks WHERE milkid={milkid}")
+    result = cursor.fetchall()
+    row = result[0]
+
+    details = {
+        "milkid": row[0],
+        "company": row[1],
+        "type": row[2],
+        "qty_kg": row[3],
+        "price": row[4],
+    }
+
+    return details

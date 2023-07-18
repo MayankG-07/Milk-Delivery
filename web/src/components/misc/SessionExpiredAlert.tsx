@@ -4,13 +4,13 @@ import { AuthContext } from "../../context/authContext";
 import { Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-export const SessionExpiredAlert = () => {
+export const SessionExpiredAlert = ({ open }: { open: boolean }) => {
   const navigate = useNavigate();
-  const { userDetails, fetchNewUserDetails } = useContext(AuthContext);
+  const { fetchNewUserDetails } = useContext(AuthContext);
 
   return (
     <AlertDialog
-      open={userDetails === null}
+      open={open}
       title="Login session expired"
       content={
         <Typography variant="body2">

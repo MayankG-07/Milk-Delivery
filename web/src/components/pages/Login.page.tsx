@@ -340,10 +340,11 @@ export const Login = () => {
       refetchOnWindowFocus: false,
       retry: false,
       onError: (err) => console.log(err),
-      onSuccess: (data) => {
-        fetchNewUserDetails({ userid: data.userid });
-        verifyTokenData({ token_data: data.token_data });
+      onSuccess: async (data) => {
+        await fetchNewUserDetails({ userid: data.userid });
+        await verifyTokenData({ token_data: data.token_data });
         navigate("/dashboard");
+        // window.location.reload();
       },
     }),
   ];
@@ -645,7 +646,7 @@ export const Login = () => {
                           <InputAdornment position="end">
                             {!otpProps.sendAgain && otpProps.sent ? (
                               <Timer expiryTimestamp={otpProps.time!}>
-                                {(minutes, seconds, isRunning) => {
+                                {(isRunning, minutes, seconds) => {
                                   if (isRunning) {
                                     return (
                                       <Chip

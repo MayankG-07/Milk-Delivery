@@ -204,7 +204,7 @@ async def get_house_paid_details(houseid: int):
     summary="View list of subscriptions of a house",
     status_code=200,
 )
-async def get_house_sub_details(houseid: int):
+async def get_house_sub_details(houseid: int, token_data=Depends(get_current_user)):
     con = connect()
     house = House(houseid)
     await house.sync_details(con=con)
