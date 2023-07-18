@@ -11,14 +11,15 @@ import {
 export const MILK_DELIVERY_USER = "MILK_DELIVERY_USER";
 type initialContext = {
   userDetails: detailsTypes | null;
-  fetchNewUserDetails: (props: fetchNewUserDetailsProps) => void;
-  verifyTokenData: (props?: verifyTokenDataProps) => void;
+  fetchNewUserDetails: (props: fetchNewUserDetailsProps) => Promise<void>;
+  verifyTokenData: (props?: verifyTokenDataProps) => Promise<void>;
 };
 
 const initialContextValue: initialContext = {
   userDetails: null,
-  fetchNewUserDetails: ({ logout: _logout, userid: _userid }) => {},
-  verifyTokenData: (_props?) => {},
+  fetchNewUserDetails: ({ logout: _logout, userid: _userid }) =>
+    Promise.resolve(),
+  verifyTokenData: (_props?) => Promise.resolve(),
 };
 
 export const AuthContext = createContext(initialContextValue);
