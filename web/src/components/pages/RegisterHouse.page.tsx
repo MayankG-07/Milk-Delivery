@@ -394,7 +394,7 @@ export const RegisterHouse = () => {
         ]}
       />
 
-      <SessionExpiredAlert open={!loggedIn} />
+      <SessionExpiredAlert />
 
       <DevTool control={control} />
     </>

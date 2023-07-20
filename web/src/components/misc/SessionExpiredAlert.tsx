@@ -1,16 +1,25 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AlertDialog } from "./AlertDialog";
 import { AuthContext } from "../../context/authContext";
 import { Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-export const SessionExpiredAlert = ({ open }: { open: boolean }) => {
+export const SessionExpiredAlert = () => {
   const navigate = useNavigate();
-  const { fetchNewUserDetails } = useContext(AuthContext);
+  const { userDetails, fetchNewUserDetails } = useContext(AuthContext);
+  const [loggedIn, setLoggedIn] = useState(true);
+
+  useEffect(() => {
+    setLoggedIn(
+      userDetails !== null &&
+        userDetails !== undefined &&
+        userDetails.token_data! !== null
+    );
+  }, [userDetails]);
 
   return (
     <AlertDialog
-      open={open}
+      open={!loggedIn}
       title="Login session expired"
       content={
         <Typography variant="body2">

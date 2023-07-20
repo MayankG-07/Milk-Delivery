@@ -3,20 +3,40 @@ import { House } from "../dashboard.page/House";
 import { SessionExpiredAlert } from "../misc/SessionExpiredAlert";
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/authContext";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { url } from "../../assets/res";
 
 export const Dashboard = () => {
   const { userDetails } = useContext(AuthContext);
-  const [loggedIn, setLoggedIn] = useState(true);
+  const userid = userDetails?.userid;
 
-  const houseids: number[] = [1];
+  const [queries, setQueries] = useState({
+    fetchHouses: {
+      queryKey: ["fetchHouses", userid],
+      queryFn: async (userId: number): Promise<number[]> => {
+        return await axios({
+          method: "GET",
+          url: `${url}/user/details`,
+          params: { userid: userId },
+        }).then((res) => res.data.houseids);
+      },
+      enabled: true,
+    },
+  });
 
-  useEffect(() => {
-    setLoggedIn(
-      userDetails !== null &&
-        userDetails !== undefined &&
-        "token_data" in userDetails
-    );
-  }, [userDetails]);
+  const {
+    // isFetching: fetchHousesIsFetching,
+    // isSuccess: fetchHousesIsSuccess,
+    // isError: fetchHousesIsError,
+    data: fetchHousesData,
+    // error: fetchHousesError,
+  } = useQuery({
+    queryKey: queries.fetchHouses.queryKey,
+    queryFn: async () => await queries.fetchHouses.queryFn(userid!),
+    enabled: queries.fetchHouses.enabled,
+    refetchOnWindowFocus: false,
+  });
 
   return (
     <>
@@ -39,18 +59,19 @@ export const Dashboard = () => {
             width: { sx: "80%", sm: "40%" },
           }}
         />
+
         <Typography sx={{ paddingY: 2, fontSize: 17 }} variant="subtitle1">
           Your Houses
         </Typography>
 
         <Box sx={{ display: "flex" }}>
-          {houseids.map((houseid) => (
+          {fetchHousesData?.map((houseid) => (
             <House key={houseid} houseid={houseid} />
           ))}
         </Box>
       </Box>
 
-      <SessionExpiredAlert open={!loggedIn} />
+      <SessionExpiredAlert />
     </>
   );
 };
