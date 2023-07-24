@@ -12,7 +12,11 @@ import {
   Tooltip,
   Link,
 } from "@mui/material";
-import { HouseProps, fetchHouseDetailsData } from "../../types/House.types";
+import {
+  HouseProps,
+  SubDetails,
+  fetchHouseDetailsData,
+} from "../../types/House.types";
 import HouseIcon from "@mui/icons-material/House";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useQuery } from "@tanstack/react-query";
@@ -20,11 +24,14 @@ import axios from "axios";
 import { url } from "../../assets/res";
 import { AuthContext } from "../../context/authContext";
 import { Day } from "../../types/DaysActive.types";
+import { useNavigate } from "react-router-dom";
 
-export const House = (props: HouseProps) => {
+export const House = (props: HouseProps, loading?: boolean) => {
   const { userDetails, verifyTokenData } = useContext(AuthContext);
 
   const [activeSubs, setActiveSubs] = useState<number>(0);
+
+  const navigate = useNavigate();
 
   const [queries, setQueries] = useState({
     fetchHouseDetails: {
@@ -47,30 +54,79 @@ export const House = (props: HouseProps) => {
     },
     fetchHouseSubsDetails: {
       queryKey: ["fetchHouseSubsDetails", props.houseid.toString()],
-      queryFn: async (
-        houseid: number
-      ): Promise<{
-        subs: {
-          subid: number;
-          milkids: number[];
-          sub_start: string;
-          sub_end: string;
-          days: Day[];
-          pause_dates: string[];
-          resume_dates: string[];
-          delivered: string[];
-          not_delivered: string[];
-          active: boolean;
-          houseid: number;
-        }[];
-      }> => {
+      queryFn: async (houseid: number): Promise<SubDetails[]> => {
         return await axios({
           method: "GET",
           url: `${url}/house/${houseid}/subs-details`,
           headers: {
             Authorization: `Bearer ${userDetails?.token_data?.access_token}`,
           },
-        }).then((res) => res.data);
+        }).then((res) => {
+          const subs: {
+            subid: number;
+            milkids: number[];
+            sub_start: string;
+            sub_end: string;
+            days: Day[];
+            pause_dates: string[];
+            resume_dates: string[];
+            delivered: string[];
+            not_delivered: string[];
+            active: boolean;
+            houseid: number;
+          }[] = res.data.subs;
+          const subsWithDate: SubDetails[] = [];
+
+          subs.forEach((sub) => {
+            subsWithDate.push({
+              ...sub,
+              sub_start: new Date(
+                parseInt(sub.sub_start.slice(0, 4)),
+                parseInt(sub.sub_start.slice(5, 7)),
+                parseInt(sub.sub_start.slice(8))
+              ),
+              sub_end: new Date(
+                parseInt(sub.sub_end.slice(0, 4)),
+                parseInt(sub.sub_end.slice(5, 7)),
+                parseInt(sub.sub_end.slice(8))
+              ),
+              pause_dates: sub.pause_dates.map(
+                (date) =>
+                  new Date(
+                    parseInt(date.slice(0, 4)),
+                    parseInt(date.slice(5, 7)),
+                    parseInt(date.slice(8))
+                  )
+              ),
+              resume_dates: sub.resume_dates.map(
+                (date) =>
+                  new Date(
+                    parseInt(date.slice(0, 4)),
+                    parseInt(date.slice(5, 7)),
+                    parseInt(date.slice(8))
+                  )
+              ),
+              delivered: sub.delivered.map(
+                (date) =>
+                  new Date(
+                    parseInt(date.slice(0, 4)),
+                    parseInt(date.slice(5, 7)),
+                    parseInt(date.slice(8))
+                  )
+              ),
+              not_delivered: sub.not_delivered.map(
+                (date) =>
+                  new Date(
+                    parseInt(date.slice(0, 4)),
+                    parseInt(date.slice(5, 7)),
+                    parseInt(date.slice(8))
+                  )
+              ),
+            });
+          });
+
+          return subsWithDate;
+        });
       },
       enabled: false,
     },
@@ -103,7 +159,7 @@ export const House = (props: HouseProps) => {
     isFetching: fetchHouseSubsDetailsIsFetching,
     isSuccess: fetchHouseSubsDetailsIsSuccess,
     isError: fetchHouseSubsDetailsIsError,
-    // data: fetchHouseSubsDetailsData,
+    data: fetchHouseSubsDetailsData,
     // error: fetchHouseSubsDetailsError,
   } = useQuery({
     queryKey: queries.fetchHouseSubsDetails.queryKey,
@@ -112,8 +168,8 @@ export const House = (props: HouseProps) => {
     refetchOnWindowFocus: false,
     enabled: queries.fetchHouseSubsDetails.enabled,
     onSuccess: (data) => {
-      for (let i: number = 0; i < data.subs.length; i++) {
-        if (data.subs[i].active) {
+      for (let i = 0; i < data.length; i++) {
+        if (data[i].active) {
           setActiveSubs((c) => c + 1);
         }
       }
@@ -136,7 +192,7 @@ export const House = (props: HouseProps) => {
       />
     </Stack>
   ) : fetchHouseDetailsIsSuccess && fetchHouseSubsDetailsIsSuccess ? (
-    <Card sx={{ maxWidth: 345, width: 250, backgroundColor: "#e0e0e2", mr: 2 }}>
+    <Card sx={{ width: 200, backgroundColor: "#e0e0e2", mr: 2 }}>
       <CardHeader
         avatar={
           <Avatar
@@ -148,37 +204,43 @@ export const House = (props: HouseProps) => {
         }
         action={
           <Tooltip title="Manage" arrow placement="top">
-            <IconButton aria-label="settings" onClick={() => alert("Settings")}>
+            <IconButton
+              aria-label="settings"
+              onClick={() =>
+                navigate("/house/manage", {
+                  state: {
+                    houseDetails: fetchHouseDetailsData!,
+                    subs: fetchHouseSubsDetailsData!,
+                  },
+                })
+              }
+            >
               <SettingsIcon />
             </IconButton>
           </Tooltip>
         }
-        title={`${fetchHouseDetailsData?.wing.toUpperCase()} - ${
-          fetchHouseDetailsData?.houseno
-        }`}
+        title={`${fetchHouseDetailsData?.wing.toUpperCase()} - ${fetchHouseDetailsData?.houseno.toString()}`.trim()}
         titleTypographyProps={{ fontSize: 17, fontWeight: "bold" }}
       />
       <Divider />
       <CardContent>
-        <Link
-          component="button"
-          onClick={() => alert("Subscription")}
-          underline="hover"
-        >
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ flexGrow: 1 }}
-          >
-            {activeSubs === 0 ? (
-              <>No active subscriptions.</>
-            ) : activeSubs === 1 ? (
-              "1 active subscription"
-            ) : (
-              `${activeSubs} active subscriptions`
-            )}
+        {activeSubs === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            No active subscriptions
           </Typography>
-        </Link>
+        ) : (
+          <Link
+            component="button"
+            onClick={() => alert("Subscription")}
+            underline="hover"
+          >
+            <Typography variant="body2" color="text.secondary">
+              {activeSubs === 1
+                ? "1 active subscription"
+                : `${activeSubs} active subscriptions`}
+            </Typography>
+          </Link>
+        )}
       </CardContent>
     </Card>
   ) : (

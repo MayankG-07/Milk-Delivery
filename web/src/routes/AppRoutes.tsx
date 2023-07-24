@@ -5,6 +5,7 @@ import { Login } from "../components/pages/Login.page";
 import { RegisterHouse } from "../components/pages/RegisterHouse.page";
 import { Dashboard } from "../components/pages/Dashboard.page";
 import { RegisterUser } from "../components/pages/RegisterUser.page";
+import { HousePage } from "../components/pages/House.page";
 
 export const AppRoutes = () => {
   return (
@@ -15,6 +16,7 @@ export const AppRoutes = () => {
       <Route path="register/user" element={<RegisterUser />} />
       <Route path="register/house" element={<RegisterHouse />} />
       <Route path="dashboard" element={<Dashboard />} />
+      <Route path="house/manage" element={<HousePage />} />
       <Route path="404" element={<NotFound404 />} />
       <Route path="*" element={<Navigate to="404" />} />
     </Routes>

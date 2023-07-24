@@ -1,3 +1,5 @@
+import { Day } from "../types/DaysActive.types";
+
 const urls = {
   iitgn: "http://10.7.17.177:8000",
   home: "http://192.168.1.10:8000",
@@ -17,12 +19,23 @@ export const milk_types = {
 // export const url = urls.home;
 export const url = urls.local;
 
-export const days = {
-  "0": { full: "Sunday", short: "Sun", avatar: "S" },
-  "1": { full: "Monday", short: "Mon", avatar: "M" },
-  "2": { full: "Tuesday", short: "Tue", avatar: "T" },
-  "3": { full: "Wednesday", short: "Wed", avatar: "W" },
-  "4": { full: "Thursday", short: "Thu", avatar: "Th" },
-  "5": { full: "Friday", short: "Fri", avatar: "F" },
-  "6": { full: "Saturday", short: "Sat", avatar: "S" },
+export const days = new Map<
+  Day,
+  { full: string; short: string; avatar: string }
+>([
+  [0, { full: "Sunday", short: "Sun", avatar: "S" }],
+  [1, { full: "Monday", short: "Mon", avatar: "M" }],
+  [2, { full: "Tuesday", short: "Tue", avatar: "T" }],
+  [3, { full: "Wednesday", short: "Wed", avatar: "W" }],
+  [4, { full: "Thursday", short: "Thu", avatar: "Th" }],
+  [5, { full: "Friday", short: "Fri", avatar: "F" }],
+  [6, { full: "Saturday", short: "Sat", avatar: "S" }],
+]);
+
+export const prettyDate = (date: Date): string => {
+  const dateString: string = date.toDateString();
+  return `
+    ${dateString.slice(8, 10)} ${dateString.slice(4, 7)}, ${dateString.slice(
+    11
+  )} (${dateString.slice(0, 3)})`;
 };

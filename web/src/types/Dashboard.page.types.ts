@@ -1,23 +1,5 @@
 import { Day } from "./DaysActive.types";
 
-export type HouseProps = {
-  houseid: number;
-};
-
-export type fetchHouseDetailsData = {
-  houseid: number;
-  wing: "a" | "b";
-  houseno: number;
-  members: number[];
-};
-
-export type HouseDetails = {
-  houseid: number;
-  wing: "a" | "b";
-  houseno: number;
-  members: number[];
-};
-
 export type SubDetails = {
   subid: number;
   milkids: number[];
