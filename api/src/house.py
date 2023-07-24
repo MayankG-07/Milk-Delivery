@@ -172,12 +172,8 @@ class House:
                 "sub_start": row[2],
                 "days": eval(row[3]) if row[3] is not None else [],
                 "sub_end": row[4],
-                "pause_dates": [dateFromInt(date).date() for date in eval(row[5])]
-                if row[5] is not None
-                else [],
-                "resume_dates": [dateFromInt(date).date() for date in eval(row[6])]
-                if row[6] is not None
-                else [],
+                "pause_date": row[5],
+                "resume_date": row[6],
                 "delivered": [dateFromInt(date).date() for date in eval(row[7])]
                 if row[7] is not None
                 else [],

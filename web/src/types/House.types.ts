@@ -24,8 +24,8 @@ export type SubDetails = {
   sub_start: Date;
   sub_end: Date;
   days: Day[];
-  pause_dates: Date[];
-  resume_dates: Date[];
+  pause_date: Date;
+  resume_date: Date;
   delivered: Date[];
   not_delivered: Date[];
   active: boolean;

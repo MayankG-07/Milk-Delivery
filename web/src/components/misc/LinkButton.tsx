@@ -22,10 +22,10 @@ export const LinkButton = ({
         background: "transparent",
         textDecoration: "underline",
       },
-      ...sx!,
+      ...sx,
     }}
     onClick={(event) => onClick!(event)}
   >
-    {children!}
+    {children}
   </Button>
 );
