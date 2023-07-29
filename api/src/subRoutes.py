@@ -3,7 +3,7 @@ from sub import Subscription
 from house import House
 from misc import dateFromString
 from schemas import NewSubParams, PauseSubParams
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from utils import get_current_user
 from db import connect, disconnect
 
@@ -46,3 +46,38 @@ async def pause_sub(
     details = await sub.pause(pause_date, resume_date, con=con)
     disconnect(con)
     return details
+
+
+# * inline with new schema
+@app.delete("/sub/{subid}/end", summary="End subscription", status_code=204)
+async def end_sub(subid: int, token_data=Depends(get_current_user)) -> None:
+    con = connect()
+    userid = token_data.get("userid")
+
+    sub = Subscription(subid=subid)
+    await sub.sync_details(con=con)
+
+    cursor = con.cursor()
+
+    query = f"SELECT * FROM bills WHERE houseid={sub.house.houseid} AND paid=0"
+    cursor.execute(query)
+    result = cursor.fetchall()
+    details = [
+        {
+            "billid": row[0],
+            "billGenTime": row[1],
+            "billAmt": row[2],
+            "paid": row[3],
+            "subid": row[4],
+            "houseid": row[5],
+        }
+        for row in result
+    ]
+
+    if len(details) == 0:
+        disconnect(con)
+        raise HTTPException(status_code=400, detail="There are pending bills")
+
+    await sub.end(con=con)
+    disconnect(con)
+    return None

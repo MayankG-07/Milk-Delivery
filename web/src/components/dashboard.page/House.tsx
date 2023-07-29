@@ -10,21 +10,43 @@ import {
   Skeleton,
   Divider,
   Tooltip,
-  Link,
 } from "@mui/material";
-import {
-  HouseProps,
-  SubDetails,
-  fetchHouseDetailsData,
-} from "../../types/House.types";
 import HouseIcon from "@mui/icons-material/House";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { url } from "../../assets/res";
 import { AuthContext } from "../../context/authContext";
-import { Day } from "../../types/DaysActive.types";
 import { useNavigate } from "react-router-dom";
+import { LinkButton } from "../misc/LinkButton";
+
+type Day = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+type Wing = "a" | "b";
+
+type HouseProps = {
+  houseid: number;
+};
+
+type SubDetails = {
+  subid: number;
+  milkids: number[];
+  sub_start: Date;
+  sub_end: Date;
+  days: Day[];
+  pause_date: Date | null;
+  resume_date: Date | null;
+  delivered: Date[];
+  not_delivered: Date[];
+  active: boolean;
+  houseid: number;
+};
+
+type fetchHouseDetailsData = {
+  houseid: number;
+  wing: Wing;
+  houseno: number;
+  members: number[];
+};
 
 export const House = (props: HouseProps, loading?: boolean) => {
   const { userDetails, verifyTokenData } = useContext(AuthContext);
@@ -68,8 +90,8 @@ export const House = (props: HouseProps, loading?: boolean) => {
             sub_start: string;
             sub_end: string;
             days: Day[];
-            pause_dates: string[];
-            resume_dates: string[];
+            pause_date: string | null;
+            resume_date: string | null;
             delivered: string[];
             not_delivered: string[];
             active: boolean;
@@ -80,48 +102,12 @@ export const House = (props: HouseProps, loading?: boolean) => {
           subs.forEach((sub) => {
             subsWithDate.push({
               ...sub,
-              sub_start: new Date(
-                parseInt(sub.sub_start.slice(0, 4)),
-                parseInt(sub.sub_start.slice(5, 7)),
-                parseInt(sub.sub_start.slice(8))
-              ),
-              sub_end: new Date(
-                parseInt(sub.sub_end.slice(0, 4)),
-                parseInt(sub.sub_end.slice(5, 7)),
-                parseInt(sub.sub_end.slice(8))
-              ),
-              pause_dates: sub.pause_dates.map(
-                (date) =>
-                  new Date(
-                    parseInt(date.slice(0, 4)),
-                    parseInt(date.slice(5, 7)),
-                    parseInt(date.slice(8))
-                  )
-              ),
-              resume_dates: sub.resume_dates.map(
-                (date) =>
-                  new Date(
-                    parseInt(date.slice(0, 4)),
-                    parseInt(date.slice(5, 7)),
-                    parseInt(date.slice(8))
-                  )
-              ),
-              delivered: sub.delivered.map(
-                (date) =>
-                  new Date(
-                    parseInt(date.slice(0, 4)),
-                    parseInt(date.slice(5, 7)),
-                    parseInt(date.slice(8))
-                  )
-              ),
-              not_delivered: sub.not_delivered.map(
-                (date) =>
-                  new Date(
-                    parseInt(date.slice(0, 4)),
-                    parseInt(date.slice(5, 7)),
-                    parseInt(date.slice(8))
-                  )
-              ),
+              sub_start: new Date(sub.sub_start),
+              sub_end: new Date(sub.sub_end),
+              pause_date: sub.pause_date ? new Date(sub.pause_date) : null,
+              resume_date: sub.resume_date ? new Date(sub.resume_date) : null,
+              delivered: sub.delivered.map((date) => new Date(date)),
+              not_delivered: sub.not_delivered.map((date) => new Date(date)),
             });
           });
 
@@ -159,7 +145,7 @@ export const House = (props: HouseProps, loading?: boolean) => {
     isFetching: fetchHouseSubsDetailsIsFetching,
     isSuccess: fetchHouseSubsDetailsIsSuccess,
     isError: fetchHouseSubsDetailsIsError,
-    data: fetchHouseSubsDetailsData,
+    // data: fetchHouseSubsDetailsData,
     // error: fetchHouseSubsDetailsError,
   } = useQuery({
     queryKey: queries.fetchHouseSubsDetails.queryKey,
@@ -209,8 +195,7 @@ export const House = (props: HouseProps, loading?: boolean) => {
               onClick={() =>
                 navigate("/house/manage", {
                   state: {
-                    houseDetails: fetchHouseDetailsData!,
-                    subs: fetchHouseSubsDetailsData!,
+                    houseid: fetchHouseDetailsData.houseid,
                   },
                 })
               }
@@ -225,21 +210,17 @@ export const House = (props: HouseProps, loading?: boolean) => {
       <Divider />
       <CardContent>
         {activeSubs === 0 ? (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.7 }}>
             No active subscriptions
           </Typography>
         ) : (
-          <Link
-            component="button"
-            onClick={() => alert("Subscription")}
-            underline="hover"
-          >
-            <Typography variant="body2" color="text.secondary">
+          <LinkButton onClick={() => alert("Subscription")}>
+            <Typography variant="body2" color="primary.main">
               {activeSubs === 1
                 ? "1 active subscription"
                 : `${activeSubs} active subscriptions`}
             </Typography>
-          </Link>
+          </LinkButton>
         )}
       </CardContent>
     </Card>

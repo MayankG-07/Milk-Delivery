@@ -1,21 +1,27 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI()
 
 origins = ["http://localhost:3000"]
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
+def create_app() -> FastAPI:
+    app = FastAPI(title="Milk Delivery")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    return app
+
+
+app = create_app()
 
 
 @app.get("/")
-async def root():
+async def root() -> dict:
     return {"message": "hello world"}
 
 

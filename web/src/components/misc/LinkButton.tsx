@@ -1,4 +1,4 @@
-import { Button, SxProps, Theme } from "@mui/material";
+import { Button, Theme, type SxProps } from "@mui/material";
 
 export const LinkButton = ({
   sx,
@@ -22,10 +22,10 @@ export const LinkButton = ({
         background: "transparent",
         textDecoration: "underline",
       },
-      ...sx!,
+      ...sx,
     }}
     onClick={(event) => onClick!(event)}
   >
-    {children!}
+    {children}
   </Button>
 );

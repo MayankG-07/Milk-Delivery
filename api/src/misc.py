@@ -14,7 +14,11 @@ def dateFromString(date: str):
 
     year = int(date[:4])
     month = int(date[5:7])
-    day = int(date[8:])
+    try:
+        day = int(date[8:])
+    except:
+        day = int(date[8:10])
+
     return datetime(year, month, day)
 
 

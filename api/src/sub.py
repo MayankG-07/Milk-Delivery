@@ -55,6 +55,7 @@ class Subscription:
             self.active = bool(row[9])
             self.house = House(houseid=row[10])
             await self.house.sync_details(con=con)
+            self.ended = row[11]
         except IndexError:
             con.close()
             raise HTTPException(status_code=404, detail="Sub not found")
@@ -157,5 +158,13 @@ class Subscription:
         query = (
             f"UPDATE subs SET delivered={sqlfyJSON(delivered)} WHERE subid={self.subid}"
         )
+        cursor.execute(query)
+        con.commit()
+
+    # * inline with new schema
+    async def end(self, clientDateTime: datetime, con):
+        cursor = con.cursor()
+
+        query = f"UPDATE subs SET active=0, sub_end='{str(clientDateTime.date())}', ended=1 WHERE subid={self.subid}"
         cursor.execute(query)
         con.commit()

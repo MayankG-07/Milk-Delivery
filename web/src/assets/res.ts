@@ -1,4 +1,27 @@
-import { Day } from "../types/DaysActive.types";
+import axios from "axios";
+
+type Day = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+type SubDetails = {
+  subid: number;
+  milkids: number[];
+  sub_start: Date;
+  sub_end: Date;
+  days: Day[];
+  pause_date: Date | null;
+  resume_date: Date | null;
+  delivered: Date[];
+  not_delivered: Date[];
+  active: boolean;
+  houseid: number;
+};
+
+type MilkDetails = {
+  milkid: number;
+  company: string;
+  type: string;
+  qty_kg: number;
+  price: number;
+};
 
 const urls = {
   iitgn: "http://10.7.17.177:8000",
@@ -38,4 +61,86 @@ export const prettyDate = (date: Date): string => {
     ${dateString.slice(8, 10)} ${dateString.slice(4, 7)}, ${dateString.slice(
     11
   )} (${dateString.slice(0, 3)})`;
+};
+
+export const dateToQueryString = (date: Date): string => {
+  return date.toISOString().slice(0, 10);
+};
+
+export const subIsPaused = (sub: SubDetails): boolean => {
+  if (sub.pause_date && sub.resume_date) {
+    const datetime = new Date();
+    const year = datetime.getFullYear();
+    const month = datetime.getMonth();
+    const day = datetime.getDate();
+
+    const todayDate = new Date(year, month, day);
+    const pause_datetime = sub.pause_date;
+    const resume_datetime = sub.resume_date;
+
+    const pause_year = pause_datetime?.getFullYear();
+    const pause_month = pause_datetime?.getMonth();
+    const pause_day = pause_datetime?.getDate();
+    const pause_date = new Date(pause_year, pause_month, pause_day);
+
+    const resume_year = resume_datetime?.getFullYear();
+    const resume_month = resume_datetime?.getMonth();
+    const resume_day = resume_datetime?.getDate();
+    const resume_date = new Date(resume_year, resume_month, resume_day);
+
+    if (todayDate >= pause_date && todayDate < resume_date) {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+};
+
+export const calculateNetAmountForSub = async (
+  sub: SubDetails
+): Promise<number> => {
+  const {
+    milkids,
+    delivered: { length: daysDelivered },
+  } = sub;
+
+  let amount = 0;
+  for (let i = 0; i < milkids.length; i++) {
+    await axios({
+      method: "GET",
+      url: `${url}/misc/milk-details/${milkids[i]}`,
+      // eslint-disable-next-line no-loop-func
+    }).then((res) => {
+      const milk: MilkDetails = res.data;
+      amount += milk.price * daysDelivered;
+    });
+  }
+
+  return amount;
+};
+
+export const dateTimeFromString = (dateTime: string): Date => {
+  const [date, time] = dateTime.split(" ");
+  const dateArr = date.split("-");
+  const timeArr = time.split(":");
+
+  const dateIntArr: number[] = [];
+  const timeIntArr: number[] = [];
+  for (let i = 0; i < dateArr.length; i++) {
+    dateIntArr.push(parseInt(dateArr[i]));
+    timeIntArr.push(parseInt(timeArr[i]));
+  }
+
+  const [year, month, day] = dateIntArr;
+  const [hours, minutes, seconds] = timeIntArr;
+
+  return new Date(year, month, day, hours, minutes, seconds);
+};
+
+export const prettyDateTime = (date: Date): string => {
+  const dateString = prettyDate(date);
+  const timeString = date.toString().slice(16, 21);
+  return timeString + " @ " + dateString;
 };

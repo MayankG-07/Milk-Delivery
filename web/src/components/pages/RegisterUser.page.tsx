@@ -17,7 +17,14 @@ import { url } from "./../../assets/res";
 import { useNavigate } from "react-router-dom";
 import { AlertDialog } from "../misc/AlertDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { RegisterUserFormValues } from "../../types/RegisterUser.types";
+
+type RegisterUserFormValues = {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+};
 
 export const RegisterUser = () => {
   const fetchRegisterUser = async () => {
