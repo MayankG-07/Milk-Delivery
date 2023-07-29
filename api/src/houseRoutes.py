@@ -103,9 +103,9 @@ async def get_paid_details():
     details = [
         {
             "billid": row[0],
-            "billGenTime": row[1],
+            "billGenTime": str(row[1]),
             "billAmt": row[2],
-            "paid": row[3],
+            "paid": bool(row[3]),
             "subid": row[4],
             "houseid": row[5],
         }
@@ -131,9 +131,9 @@ async def get_due_details():
     details = [
         {
             "billid": row[0],
-            "billGenTime": row[1],
+            "billGenTime": str(row[1]),
             "billAmt": row[2],
-            "paid": row[3],
+            "paid": bool(row[3]),
             "subid": row[4],
             "houseid": row[5],
         }
@@ -157,9 +157,9 @@ async def get_house_due_details(houseid: int):
     details = [
         {
             "billid": row[0],
-            "billGenTime": row[1],
+            "billGenTime": str(row[1]),
             "billAmt": row[2],
-            "paid": row[3],
+            "paid": bool(row[3]),
             "subid": row[4],
             "houseid": row[5],
         }
@@ -185,9 +185,9 @@ async def get_house_paid_details(houseid: int):
     details = [
         {
             "billid": row[0],
-            "billGenTime": row[1],
+            "billGenTime": str(row[1]),
             "billAmt": row[2],
-            "paid": row[3],
+            "paid": bool(row[3]),
             "subid": row[4],
             "houseid": row[5],
         }
@@ -280,6 +280,16 @@ async def generate_bill(
     bill = Bill(billGenTime=clientDateTime, sub=sub, house=house)
 
     details = await bill.generate(con=con)
+    await bill.sync_details(con=con)
+
+    cursor = con.cursor()
+
+    query = f"UPDATE subs SET active=false WHERE subid={sub.subid}"
+    cursor.execute(query)
+    con.commit()
+
+    await sub.sync_details(con=con)
+
     disconnect(con)
     return details
 
@@ -303,6 +313,12 @@ async def pay_bill(
     await bill.sync_details(con=con)
 
     await bill.pay(con=con)
+    await bill.sync_details(con=con)
+    await sub.sync_details(con=con)
+
+    await sub.end(con=con)
+    await sub.sync_details(con=con)
+
     disconnect(con)
 
 

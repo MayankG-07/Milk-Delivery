@@ -6,11 +6,30 @@ import {
   DialogContent,
   DialogTitle,
   Slide,
+  Theme,
+  type SxProps,
 } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
-import { ActionType, AlertDialogProps } from "../../types/AlertDialog.types";
 
-const Transition = forwardRef(function Transition(
+type ActionType = {
+  text: string;
+  onclick: "close" | (() => void);
+  sx?: SxProps<Theme>;
+};
+
+type AlertDialogProps = {
+  open: boolean;
+  title: string;
+  content: string | React.ReactNode;
+  showActions?: boolean;
+  actions?: ActionType[];
+};
+
+const Transition: React.JSXElementConstructor<
+  TransitionProps & {
+    children: React.ReactElement<any, any>;
+  }
+> = forwardRef(function Transition(
   props: TransitionProps & {
     children: React.ReactElement<any, any>;
   },
@@ -57,6 +76,7 @@ export const AlertDialog = ({
                 dialogOpen = false;
                 setStateDialogOpen(false);
               }}
+              sx={action.sx}
             >
               {action.text}
             </Button>

@@ -21,11 +21,24 @@ import { AlertDialog } from "../misc/AlertDialog";
 import { AuthContext } from "../../context/authContext";
 import { SessionExpiredAlert } from "../misc/SessionExpiredAlert";
 import { useNavigate } from "react-router-dom";
-import {
-  RegisterHouseFormValues,
-  registerHouseQueryData,
-} from "../../types/RegisterHouse.types";
-import { getHouseIdQueryData } from "../../types/RegisterHouse.types";
+
+type RegisterHouseFormValues = {
+  houseno: number;
+};
+
+type getHouseIdQueryData = {
+  houseid?: number | null;
+  wing?: "a" | "b" | null;
+  houseno?: number | null;
+  members?: number[];
+};
+
+type registerHouseQueryData = {
+  houseid?: number;
+  wing?: "a" | "b";
+  houseno?: number;
+  members?: number[];
+};
 
 export const RegisterHouse = () => {
   const [wing, setWing] = useState<"a" | "b" | null>(null);

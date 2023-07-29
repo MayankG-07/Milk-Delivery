@@ -3,3 +3,4 @@ web/node_modules/
 api/src/__pycache__/
 api/src/.pytest_cache/
 api/src/tests/__pycache__/
+api/src/logfile.log

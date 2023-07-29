@@ -13,7 +13,7 @@ class Bill:
         paid: bool | None = None,
         sub: Subscription | None = None,
         house: House | None = None,
-    ):
+    ) -> None:
         self.billid = billid
         self.billGenTime = billGenTime
         self.billAmt = billAmt
@@ -22,7 +22,7 @@ class Bill:
         self.house = house
 
     # * inline with new schema
-    async def sync_details(self, con):
+    async def sync_details(self, con) -> None:
         cursor = con.cursor()
 
         query = (
@@ -49,7 +49,7 @@ class Bill:
         await self.house.sync_details(con=con)
 
     # * inline with new schema
-    async def generate(self, con):
+    async def generate(self, con) -> dict:
         cursor = con.cursor()
 
         query = f"SELECT milkids, delivered FROM subs WHERE subid={self.sub.subid}"
@@ -80,6 +80,7 @@ class Bill:
         con.commit()
 
         await self.sync_details(con=con)
+
         details = {
             "billid": self.billid,
             "billGenTime": str(self.billGenTime),
@@ -88,10 +89,11 @@ class Bill:
             "subid": self.sub.subid,
             "houseid": self.house.houseid,
         }
+
         return details
 
     # * inline with new schema
-    async def pay(self, con):
+    async def pay(self, con) -> None:
         cursor = con.cursor()
 
         query = f"UPDATE bills SET paid=1 WHERE billid={self.billid}"

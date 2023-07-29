@@ -18,7 +18,10 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/authContext";
-import { NavbarProps } from "../../types/Navbar.types";
+
+type NavbarProps = {
+  window?: () => Window;
+};
 
 const drawerWidth = 250;
 

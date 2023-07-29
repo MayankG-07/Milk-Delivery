@@ -1,5 +1,13 @@
 import { useTimer } from "react-timer-hook";
-import { TimerProps } from "../../types/Timer.types";
+
+type TimerProps = {
+  expiryTimestamp: Date;
+  children: (
+    isRunning: boolean,
+    minutesString?: string,
+    secondsString?: string
+  ) => React.ReactNode | void;
+};
 
 export const Timer = ({ expiryTimestamp, children }: TimerProps) => {
   const { minutes, seconds, isRunning } = useTimer({ expiryTimestamp });

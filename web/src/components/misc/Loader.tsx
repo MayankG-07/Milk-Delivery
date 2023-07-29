@@ -1,6 +1,9 @@
 import { LinearProgress, Box } from "@mui/material";
 import { AlertDialog } from "./AlertDialog";
-import { LoaderProps } from "../../types/Loader.types";
+
+type LoaderProps = {
+  loading: boolean;
+};
 
 export const Loader = ({ loading }: LoaderProps) => {
   return (

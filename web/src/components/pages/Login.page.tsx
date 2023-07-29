@@ -32,13 +32,45 @@ import { AxiosError } from "axios";
 import { url } from "../../assets/res";
 import { AlertDialog } from "../misc/AlertDialog";
 import { AuthContext } from "../../context/authContext";
-import {
-  LoginFormValues,
-  getHouseIdQueryData,
-  getUserIdByEmailQueryData,
-  getUserNamesQueryData,
-  loginQueryData,
-} from "../../types/Login.types";
+
+type tokenDataTypes = {
+  access_token: string;
+  token_type: string;
+};
+
+type LoginFormValues = {
+  houseno?: number;
+  email?: string;
+  otp?: number;
+  password?: string;
+};
+
+type getHouseIdQueryData = {
+  houseid?: number | null;
+  wing?: "a" | "b" | null;
+  houseno?: number | null;
+  members?: number[];
+};
+
+type getUserIdByEmailQueryData = {
+  userid?: number;
+  name?: string;
+  email?: string;
+  phone?: string;
+  imgUrl?: string | null;
+  houseids?: number[] | null;
+  verified?: boolean;
+};
+
+type getUserNamesQueryData = {
+  id: number | null;
+  name: string | null;
+}[];
+
+type loginQueryData = {
+  userid?: number;
+  token_data?: tokenDataTypes;
+};
 
 export const Login = () => {
   const { fetchNewUserDetails, verifyTokenData } = useContext(AuthContext);

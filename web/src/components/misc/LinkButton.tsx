@@ -1,4 +1,4 @@
-import { Button, SxProps, Theme } from "@mui/material";
+import { Button, Theme, type SxProps } from "@mui/material";
 
 export const LinkButton = ({
   sx,

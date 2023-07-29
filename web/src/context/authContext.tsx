@@ -1,12 +1,31 @@
 import { createContext, useState } from "react";
 import axios from "axios";
 import { url } from "../assets/res";
-import {
-  detailsTypes,
-  fetchNewUserDetailsProps,
-  tokenDataTypes,
-  verifyTokenDataProps,
-} from "../types/userContext.types";
+
+type fetchNewUserDetailsProps = {
+  logout?: boolean;
+  userid?: number;
+};
+
+type tokenDataTypes = {
+  access_token: string;
+  token_type: string;
+};
+
+type verifyTokenDataProps = {
+  token_data?: tokenDataTypes;
+};
+
+type detailsTypes = {
+  userid: number;
+  name: string;
+  email: string;
+  phone: string;
+  imgUrl?: string | null;
+  houseids: number[];
+  verified: boolean;
+  token_data?: tokenDataTypes | null;
+} | null;
 
 export const MILK_DELIVERY_USER = "MILK_DELIVERY_USER";
 type initialContext = {
